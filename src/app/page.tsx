@@ -61,6 +61,7 @@ interface EmailTemplate {
   trainingDate: string;
   batches: BatchData[];
   sheetsLink: string;
+  to: string;
   generatedContent: string;
   plainTextContent?: string;
 }
@@ -101,9 +102,11 @@ export default function EmailGeneratorPage() {
     trainingDate: '',
     batches: [],
     sheetsLink: 'https://docs.google.com/spreadsheets/d/1q2jA03C5yKXD8dHcGdECbZtGpUWOZDa1_YKQO8RkXjQ/edit?usp=sharing',
+    to: 'premsagar.sharma@niet.co.in, amd@niet.co.in, director@niet.co.in, arvind.sharma@niet.co.in, ajeet.singh@niet.co.in',
     generatedContent: ''
   });
   const [copiedEmailTemplate, setCopiedEmailTemplate] = useState<boolean>(false);
+  const [copiedEmailTo, setCopiedEmailTo] = useState<boolean>(false);
   // Subject lines for emails
   const [emailTemplateSubject, setEmailTemplateSubject] = useState<string>('');
   const [absentStudentEmailSubject, setAbsentStudentEmailSubject] = useState<string>('');
@@ -114,8 +117,20 @@ export default function EmailGeneratorPage() {
   // Student email templates
   const [absentStudentEmailContent, setAbsentStudentEmailContent] = useState<string>('');
   const [presentStudentEmailContent, setPresentStudentEmailContent] = useState<string>('');
+  const [absentStudentEmailTo, setAbsentStudentEmailTo] = useState<string>('');
+  const [presentStudentEmailTo, setPresentStudentEmailTo] = useState<string>('');
+  const [absentStudentEmailCC, setAbsentStudentEmailCC] = useState<string>('');
+  const [presentStudentEmailCC, setPresentStudentEmailCC] = useState<string>('');
+  const [absentStudentEmailBCC, setAbsentStudentEmailBCC] = useState<string>('');
+  const [presentStudentEmailBCC, setPresentStudentEmailBCC] = useState<string>('');
   const [copiedAbsentStudentEmail, setCopiedAbsentStudentEmail] = useState<boolean>(false);
   const [copiedPresentStudentEmail, setCopiedPresentStudentEmail] = useState<boolean>(false);
+  const [copiedAbsentStudentEmailTo, setCopiedAbsentStudentEmailTo] = useState<boolean>(false);
+  const [copiedPresentStudentEmailTo, setCopiedPresentStudentEmailTo] = useState<boolean>(false);
+  const [copiedAbsentStudentEmailCC, setCopiedAbsentStudentEmailCC] = useState<boolean>(false);
+  const [copiedPresentStudentEmailCC, setCopiedPresentStudentEmailCC] = useState<boolean>(false);
+  const [copiedAbsentStudentEmailBCC, setCopiedAbsentStudentEmailBCC] = useState<boolean>(false);
+  const [copiedPresentStudentEmailBCC, setCopiedPresentStudentEmailBCC] = useState<boolean>(false);
   const [selectedBatchForEmail, setSelectedBatchForEmail] = useState<string>('');
 
   // Security: Disable right-click and developer tools access
@@ -1124,21 +1139,26 @@ Regards,`;
       return `${dayNum} ${months[parseInt(month, 10)]} ${year}`;
     };
     
-    // Get topic name for subject (handle names with "Attendance" suffix)
-    const getTopicName = (batchName: string): string => {
-      const normalizedName = batchName.toLowerCase();
+    
+    // Clean up batch name: remove "Attendance" suffix and normalize case
+    const cleanBatchName = (batchName: string): string => {
+      const cleaned = batchName.replace(/\s*Attendance\s*$/i, '').trim();
       
-      if (normalizedName.includes('ms-1')) {
-        return 'MERN Stack';
-      } else if (normalizedName.includes('java sde-1') || normalizedName.includes('java sde-2')) {
-        return 'Java SDE';
-      } else if (normalizedName.includes('data scientist')) {
-        return 'Data Science Python';
+      // Normalize common batch names
+      if (cleaned.toLowerCase().includes('java sde-1')) {
+        return 'JAVA SDE-1';
+      } else if (cleaned.toLowerCase().includes('java sde-2')) {
+        return 'JAVA SDE-2';
+      } else if (cleaned.toLowerCase().includes('ms-1')) {
+        return 'MS-1';
+      } else if (cleaned.toLowerCase().includes('data scientist')) {
+        return 'Data Scientist';
       }
-      return batchName; // fallback to original name
+      
+      return cleaned.toUpperCase(); // Default to uppercase for consistency
     };
     
-    const subjectTopic = selectedBatchForEmail ? getTopicName(selectedBatchForEmail) : 'Training';
+    const subjectTopic = selectedBatchForEmail ? cleanBatchName(selectedBatchForEmail) : 'Training';
     const subjectLine = `${subjectTopic} NCET + Training NIET College Attendance ${formatDateForStudentSubject(actualDate)}`;
     
     const htmlContent = `<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">
@@ -1174,8 +1194,21 @@ Regards,`;
 <p><strong>Regards,</strong></p>
 </div>`;
 
+    // Set up email fields with proper structure
+    const nietStaffEmails = 'premsagar.sharma@niet.co.in, "Dr. Neema Agarwal" <amd@niet.co.in>, "Dr. Vinod M Kapse" <director@niet.co.in>, arvind.sharma@niet.co.in, ajeet.singh@niet.co.in';
+    const myAnatomyStaffEmails = 'nishi.s@myanatomy.in, sucharita@myanatomy.in';
+    
+    let absentStudentEmails = '';
+    if (attendanceStats && attendanceStats.absentStudents.length > 0) {
+      // Get emails for BCC field (the actual students)
+      absentStudentEmails = attendanceStats.absentStudents.map(student => student.email).filter(email => email).join(', ');
+    }
+
     setAbsentStudentEmailContent(htmlContent);
     setAbsentStudentEmailSubject(subjectLine);
+    setAbsentStudentEmailTo(nietStaffEmails);
+    setAbsentStudentEmailCC(myAnatomyStaffEmails);
+    setAbsentStudentEmailBCC(absentStudentEmails);
   };
 
   const generatePresentStudentEmail = () => {
@@ -1190,21 +1223,8 @@ Regards,`;
       return `${dayNum} ${months[parseInt(month, 10)]} ${year}`;
     };
     
-    // Get topic name for subject (handle names with "Attendance" suffix)
-    const getTopicName = (batchName: string): string => {
-      const normalizedName = batchName.toLowerCase();
-      
-      if (normalizedName.includes('ms-1')) {
-        return 'MERN Stack';
-      } else if (normalizedName.includes('java sde-1') || normalizedName.includes('java sde-2')) {
-        return 'Java SDE';
-      } else if (normalizedName.includes('data scientist')) {
-        return 'Data Science Python';
-      }
-      return batchName; // fallback to original name
-    };
     
-    const subjectTopic = selectedBatchForEmail ? getTopicName(selectedBatchForEmail) : 'Training';
+    const subjectTopic = selectedBatchForEmail || 'Training';
     const subjectLine = `${subjectTopic} NCET + Training NIET College Attendance ${formatDateForStudentSubject(actualDate)}`;
     
     const htmlContent = `<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">
@@ -1236,8 +1256,21 @@ Regards,`;
 <p><strong>Regards,</strong></p>
 </div>`;
 
+    // Set up email fields with proper structure
+    const nietStaffEmails = 'premsagar.sharma@niet.co.in, "Dr. Neema Agarwal" <amd@niet.co.in>, "Dr. Vinod M Kapse" <director@niet.co.in>, arvind.sharma@niet.co.in, ajeet.singh@niet.co.in';
+    const myAnatomyStaffEmails = 'nishi.s@myanatomy.in, sucharita@myanatomy.in';
+    
+    let presentStudentEmails = '';
+    if (attendanceStats && attendanceStats.presentStudents.length > 0) {
+      // Get emails for BCC field (the actual students)
+      presentStudentEmails = attendanceStats.presentStudents.map(student => student.email).filter(email => email).join(', ');
+    }
+
     setPresentStudentEmailContent(htmlContent);
     setPresentStudentEmailSubject(subjectLine);
+    setPresentStudentEmailTo(nietStaffEmails);
+    setPresentStudentEmailCC(myAnatomyStaffEmails);
+    setPresentStudentEmailBCC(presentStudentEmails);
   };
 
   const copyAbsentStudentEmail = async () => {
@@ -1284,6 +1317,31 @@ Regards,`;
     }
   };
 
+  const copyEmailTo = async () => {
+    if (!emailTemplate.to) return;
+    
+    try {
+      await navigator.clipboard.writeText(emailTemplate.to);
+      setCopiedEmailTo(true);
+      setTimeout(() => setCopiedEmailTo(false), 3000);
+    } catch (error) {
+      console.error('Failed to copy email To field:', error);
+      // Fallback: use execCommand
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = emailTemplate.to;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setCopiedEmailTo(true);
+        setTimeout(() => setCopiedEmailTo(false), 3000);
+      } catch (fallbackError) {
+        console.error('Failed to copy email To field with fallback:', fallbackError);
+      }
+    }
+  };
+
   // Copy functions for subject lines
   const copyEmailTemplateSubject = async () => {
     if (!emailTemplateSubject) return;
@@ -1318,6 +1376,156 @@ Regards,`;
       setTimeout(() => setCopiedPresentStudentSubject(false), 3000);
     } catch (error) {
       console.error('Failed to copy present student email subject:', error);
+    }
+  };
+
+  const copyAbsentStudentEmailTo = async () => {
+    if (!absentStudentEmailTo) return;
+    
+    try {
+      await navigator.clipboard.writeText(absentStudentEmailTo);
+      setCopiedAbsentStudentEmailTo(true);
+      setTimeout(() => setCopiedAbsentStudentEmailTo(false), 3000);
+    } catch (error) {
+      console.error('Failed to copy absent student email To field:', error);
+      // Fallback: use execCommand
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = absentStudentEmailTo;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setCopiedAbsentStudentEmailTo(true);
+        setTimeout(() => setCopiedAbsentStudentEmailTo(false), 3000);
+      } catch (fallbackError) {
+        console.error('Failed to copy absent student email To field with fallback:', fallbackError);
+      }
+    }
+  };
+
+  const copyPresentStudentEmailTo = async () => {
+    if (!presentStudentEmailTo) return;
+    
+    try {
+      await navigator.clipboard.writeText(presentStudentEmailTo);
+      setCopiedPresentStudentEmailTo(true);
+      setTimeout(() => setCopiedPresentStudentEmailTo(false), 3000);
+    } catch (error) {
+      console.error('Failed to copy present student email To field:', error);
+      // Fallback: use execCommand
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = presentStudentEmailTo;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setCopiedPresentStudentEmailTo(true);
+        setTimeout(() => setCopiedPresentStudentEmailTo(false), 3000);
+      } catch (fallbackError) {
+        console.error('Failed to copy present student email To field with fallback:', fallbackError);
+      }
+    }
+  };
+
+  const copyAbsentStudentEmailCC = async () => {
+    if (!absentStudentEmailCC) return;
+    
+    try {
+      await navigator.clipboard.writeText(absentStudentEmailCC);
+      setCopiedAbsentStudentEmailCC(true);
+      setTimeout(() => setCopiedAbsentStudentEmailCC(false), 3000);
+    } catch (error) {
+      console.error('Failed to copy absent student email CC field:', error);
+      // Fallback: use execCommand
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = absentStudentEmailCC;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setCopiedAbsentStudentEmailCC(true);
+        setTimeout(() => setCopiedAbsentStudentEmailCC(false), 3000);
+      } catch (fallbackError) {
+        console.error('Failed to copy absent student email CC field with fallback:', fallbackError);
+      }
+    }
+  };
+
+  const copyPresentStudentEmailCC = async () => {
+    if (!presentStudentEmailCC) return;
+    
+    try {
+      await navigator.clipboard.writeText(presentStudentEmailCC);
+      setCopiedPresentStudentEmailCC(true);
+      setTimeout(() => setCopiedPresentStudentEmailCC(false), 3000);
+    } catch (error) {
+      console.error('Failed to copy present student email CC field:', error);
+      // Fallback: use execCommand
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = presentStudentEmailCC;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setCopiedPresentStudentEmailCC(true);
+        setTimeout(() => setCopiedPresentStudentEmailCC(false), 3000);
+      } catch (fallbackError) {
+        console.error('Failed to copy present student email CC field with fallback:', fallbackError);
+      }
+    }
+  };
+
+  const copyAbsentStudentEmailBCC = async () => {
+    if (!absentStudentEmailBCC) return;
+    
+    try {
+      await navigator.clipboard.writeText(absentStudentEmailBCC);
+      setCopiedAbsentStudentEmailBCC(true);
+      setTimeout(() => setCopiedAbsentStudentEmailBCC(false), 3000);
+    } catch (error) {
+      console.error('Failed to copy absent student email BCC field:', error);
+      // Fallback: use execCommand
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = absentStudentEmailBCC;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setCopiedAbsentStudentEmailBCC(true);
+        setTimeout(() => setCopiedAbsentStudentEmailBCC(false), 3000);
+      } catch (fallbackError) {
+        console.error('Failed to copy absent student email BCC field with fallback:', fallbackError);
+      }
+    }
+  };
+
+  const copyPresentStudentEmailBCC = async () => {
+    if (!presentStudentEmailBCC) return;
+    
+    try {
+      await navigator.clipboard.writeText(presentStudentEmailBCC);
+      setCopiedPresentStudentEmailBCC(true);
+      setTimeout(() => setCopiedPresentStudentEmailBCC(false), 3000);
+    } catch (error) {
+      console.error('Failed to copy present student email BCC field:', error);
+      // Fallback: use execCommand
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = presentStudentEmailBCC;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setCopiedPresentStudentEmailBCC(true);
+        setTimeout(() => setCopiedPresentStudentEmailBCC(false), 3000);
+      } catch (fallbackError) {
+        console.error('Failed to copy present student email BCC field with fallback:', fallbackError);
+      }
     }
   };
 
@@ -2206,6 +2414,39 @@ Warm regards,`.replace(/\n/g, '<br>')
                       style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
                     />
                   </div>
+                  
+                  {/* To Field */}
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-300 font-medium">To (Email Recipients):</label>
+                    <div className="flex gap-2">
+                      <textarea
+                        value={emailTemplate.to}
+                        onChange={(e) => setEmailTemplate(prev => ({ ...prev, to: e.target.value }))}
+                        placeholder="premsagar.sharma@niet.co.in, amd@niet.co.in, ..."
+                        className="flex-1 bg-gray-600 border border-gray-500 rounded px-3 py-2 text-white text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 select-text resize-vertical"
+                        style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
+                        rows={3}
+                      />
+                      <button
+                        onClick={copyEmailTo}
+                        className="flex items-center gap-1 bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded text-xs font-medium transition-colors duration-200 h-fit"
+                        title="Copy email addresses to clipboard"
+                      >
+                        {copiedEmailTo ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-400">Pre-populated with NIET email addresses. You can copy and paste this into your email client&apos;s &quot;To&quot; field.</p>
+                  </div>
                 </div>
 
                 {/* Batch Data Display */}
@@ -2552,6 +2793,99 @@ Warm regards,`.replace(/\n/g, '<br>')
                     </div>
                   </div>
                 )}
+
+                {/* To Field */}
+                {absentStudentEmailTo && (
+                  <div className="bg-red-600/10 border border-red-500/30 rounded-lg p-3 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-red-400" />
+                        <span className="text-xs font-semibold text-red-300">To (NIET Staff)</span>
+                      </div>
+                      <button
+                        onClick={copyAbsentStudentEmailTo}
+                        className="flex items-center gap-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded transition-colors"
+                      >
+                        {copiedAbsentStudentEmailTo ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="text-xs text-red-300/60 max-h-20 overflow-y-auto break-all">
+                      {absentStudentEmailTo}
+                    </div>
+                  </div>
+                )}
+
+                {/* CC Field */}
+                {absentStudentEmailCC && (
+                  <div className="bg-red-600/10 border border-red-500/30 rounded-lg p-3 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-red-400" />
+                        <span className="text-xs font-semibold text-red-300">CC (MyAnatomy Staff)</span>
+                      </div>
+                      <button
+                        onClick={copyAbsentStudentEmailCC}
+                        className="flex items-center gap-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded transition-colors"
+                      >
+                        {copiedAbsentStudentEmailCC ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="text-xs text-red-300/60 max-h-20 overflow-y-auto break-all">
+                      {absentStudentEmailCC}
+                    </div>
+                  </div>
+                )}
+
+                {/* BCC Field */}
+                {absentStudentEmailBCC && (
+                  <div className="bg-red-600/10 border border-red-500/30 rounded-lg p-3 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-red-400" />
+                        <span className="text-xs font-semibold text-red-300">BCC (Absent Students)</span>
+                      </div>
+                      <button
+                        onClick={copyAbsentStudentEmailBCC}
+                        className="flex items-center gap-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded transition-colors"
+                      >
+                        {copiedAbsentStudentEmailBCC ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="text-xs text-red-300/60 max-h-20 overflow-y-auto break-all">
+                      {absentStudentEmailBCC}
+                    </div>
+                  </div>
+                )}
                 
                 {absentStudentEmailContent ? (
                   <div className="bg-gray-800 rounded-lg p-4 border border-gray-600 max-h-96 overflow-y-auto">
@@ -2636,6 +2970,99 @@ Warm regards,`.replace(/\n/g, '<br>')
                     </div>
                   </div>
                 )}
+
+                {/* To Field */}
+                {presentStudentEmailTo && (
+                  <div className="bg-green-600/10 border border-green-500/30 rounded-lg p-3 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-green-400" />
+                        <span className="text-xs font-semibold text-green-300">To (NIET Staff)</span>
+                      </div>
+                      <button
+                        onClick={copyPresentStudentEmailTo}
+                        className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors"
+                      >
+                        {copiedPresentStudentEmailTo ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="text-xs text-green-300/60 max-h-20 overflow-y-auto break-all">
+                      {presentStudentEmailTo}
+                    </div>
+                  </div>
+                )}
+
+                {/* CC Field */}
+                {presentStudentEmailCC && (
+                  <div className="bg-green-600/10 border border-green-500/30 rounded-lg p-3 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-green-400" />
+                        <span className="text-xs font-semibold text-green-300">CC (MyAnatomy Staff)</span>
+                      </div>
+                      <button
+                        onClick={copyPresentStudentEmailCC}
+                        className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors"
+                      >
+                        {copiedPresentStudentEmailCC ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="text-xs text-green-300/60 max-h-20 overflow-y-auto break-all">
+                      {presentStudentEmailCC}
+                    </div>
+                  </div>
+                )}
+
+                {/* BCC Field */}
+                {presentStudentEmailBCC && (
+                  <div className="bg-green-600/10 border border-green-500/30 rounded-lg p-3 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-green-400" />
+                        <span className="text-xs font-semibold text-green-300">BCC (Present Students)</span>
+                      </div>
+                      <button
+                        onClick={copyPresentStudentEmailBCC}
+                        className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors"
+                      >
+                        {copiedPresentStudentEmailBCC ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="text-xs text-green-300/60 max-h-20 overflow-y-auto break-all">
+                      {presentStudentEmailBCC}
+                    </div>
+                  </div>
+                )}
                 
                 {presentStudentEmailContent ? (
                   <div className="bg-gray-800 rounded-lg p-4 border border-gray-600 max-h-96 overflow-y-auto">
@@ -2675,152 +3102,6 @@ Warm regards,`.replace(/\n/g, '<br>')
               </div>
             </div>
           </section>
-
-          {/* Row 6: Collective Students - Full Width */}
-          <section className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <Users className="w-5 h-5 text-gray-400" />
-                <h2 className="text-lg font-semibold text-white">Collective Students</h2>
-                <span className="bg-cyan-600 text-white text-xs px-2 py-1 rounded-full">
-                  All Batches
-                </span>
-              </div>
-            </div>
-            
-            <p className="text-sm text-gray-400 mb-6">
-              View and copy email addresses of all students (present/absent) across all selected batches for the chosen date.
-            </p>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* All Present Students */}
-              <div className="bg-green-600/10 border border-green-500/30 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-green-300 mb-2">All Present Students</h3>
-                    <p className="text-xs text-green-400/70">Students who attended from all batches</p>
-                  </div>
-                  <button
-                    onClick={copyAllPresentStudentEmails}
-                    disabled={getAllPresentStudents().length === 0}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-                  >
-                    {copiedPresentEmails ? (
-                      <>
-                        <Check className="w-3 h-3" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3 h-3" />
-                        Copy All Present Emails
-                      </>
-                    )}
-                  </button>
-                </div>
-                
-                <div className="bg-gray-800 rounded-lg p-4 border border-gray-600 max-h-64 overflow-y-auto">
-                  {getAllPresentStudents().length > 0 ? (
-                    <div className="space-y-2">
-                      <div className="text-sm font-semibold text-green-300 mb-3">
-                        Total Present: {getAllPresentStudents().length} students
-                      </div>
-                      {getAllPresentStudents().map((student, index) => (
-                        <div key={index} className="flex justify-between items-center text-xs text-gray-300 bg-gray-700/50 p-2 rounded">
-                          <span className="font-medium">{student.name}</span>
-                          <span className="text-green-400">{student.email}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center text-gray-500 py-8">
-                      <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                      <p className="text-sm font-medium mb-2">No present students found</p>
-                      <p className="text-xs">Process attendance data to see present students</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* All Absent Students */}
-              <div className="bg-red-600/10 border border-red-500/30 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-red-300 mb-2">All Absent Students</h3>
-                    <p className="text-xs text-red-400/70">Students who missed from all batches</p>
-                  </div>
-                  <button
-                    onClick={copyAllAbsentStudentEmails}
-                    disabled={getAllAbsentStudents().length === 0}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-                  >
-                    {copiedAbsentEmails ? (
-                      <>
-                        <Check className="w-3 h-3" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3 h-3" />
-                        Copy All Absent Emails
-                      </>
-                    )}
-                  </button>
-                </div>
-                
-                <div className="bg-gray-800 rounded-lg p-4 border border-gray-600 max-h-64 overflow-y-auto">
-                  {getAllAbsentStudents().length > 0 ? (
-                    <div className="space-y-2">
-                      <div className="text-sm font-semibold text-red-300 mb-3">
-                        Total Absent: {getAllAbsentStudents().length} students
-                      </div>
-                      {getAllAbsentStudents().map((student, index) => (
-                        <div key={index} className="flex justify-between items-center text-xs text-gray-300 bg-gray-700/50 p-2 rounded">
-                          <span className="font-medium">{student.name}</span>
-                          <span className="text-red-400">{student.email}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center text-gray-500 py-8">
-                      <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                      <p className="text-sm font-medium mb-2">No absent students found</p>
-                      <p className="text-xs">Process attendance data to see absent students</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Summary Information */}
-            <div className="mt-6 bg-cyan-600/10 border border-cyan-500/30 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <Users className="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h4 className="text-cyan-300 text-sm font-semibold mb-2">Collective Summary</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-400">{getAllPresentStudents().length}</div>
-                      <div className="text-gray-400">Total Present</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-red-400">{getAllAbsentStudents().length}</div>
-                      <div className="text-gray-400">Total Absent</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-cyan-400">{getAllPresentStudents().length + getAllAbsentStudents().length}</div>
-                      <div className="text-gray-400">Total Students</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-purple-400">{selectedSheetsForProcessing.size}</div>
-                      <div className="text-gray-400">Active Batches</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
         </main>
       </div>
     </div>
