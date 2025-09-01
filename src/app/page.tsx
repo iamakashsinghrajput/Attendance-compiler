@@ -435,10 +435,10 @@ export default function EmailGeneratorPage() {
     
     // Define row limits for different sheet types (subtract 1 for 0-based indexing)
     if (sheetNameLower.includes('ms-1') || sheetNameLower.includes('ms1')) {
-      return 142 - 1; // Ignore row 142 and below, so process up to row 141 (index 141)
+      return 143 - 1; // Ignore row 142 and below, so process up to row 141 (index 141)
     }
     if (sheetNameLower.includes('java') && sheetNameLower.includes('sde-1')) {
-      return 108 - 1; // Ignore row 108 and below, so process up to row 107 (index 107)
+      return 109 - 1; // Ignore row 108 and below, so process up to row 107 (index 107)
     }
     if (sheetNameLower.includes('java') && sheetNameLower.includes('sde-2')) {
       return 98 - 1; // Ignore row 98 and below, so process up to row 97 (index 97)
