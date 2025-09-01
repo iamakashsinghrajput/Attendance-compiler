@@ -104,7 +104,7 @@ export default function EmailGeneratorPage() {
   const [emailTemplate, setEmailTemplate] = useState<EmailTemplate>({
     trainingDate: '',
     batches: [],
-    sheetsLink: ' https://docs.google.com/spreadsheets/d/1X3p75fw2Uz34A-LveIhex-zAxm-VVlImNOmoZOihvMg/edit?gid=1842156615#gid=1842156615',
+    sheetsLink: 'https://docs.google.com/spreadsheets/d/1X3p75fw2Uz34A-LveIhex-zAxm-VVlImNOmoZOihvMg/edit?gid=1842156615#gid=1842156615',
     to: 'premsagar.sharma@niet.co.in, amd@niet.co.in, director@niet.co.in, arvind.sharma@niet.co.in, ajeet.singh@niet.co.in',
     generatedContent: ''
   });
