@@ -4,6 +4,8 @@
 import { useState, useEffect } from 'react';
 import { Mail, Upload, Book, Building, Moon, ChevronDown, FileText, Copy, Check, Users, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import SRMOnline from './SRMOnline';
+import SRMOffline from './SRMOffline';
 
 type FileState = File | null;
 
@@ -68,6 +70,7 @@ interface EmailTemplate {
 
 const colleges = [
   { id: 'srm', name: 'SRM' },
+  { id: 'srm-online', name: 'SRM Online' },
   { id: 'karpagam', name: 'Karpagam' },
   { id: 'niet', name: 'NIET' }
 ];
@@ -220,6 +223,35 @@ export default function EmailGeneratorPage() {
     };
   }, []);
 
+  // Update email configuration based on selected college
+  useEffect(() => {
+    if (selectedCollege === 'srm') {
+      setEmailTemplate(prev => ({ 
+        ...prev, 
+        to: 'dean@srm.ac.in, registrar@srm.ac.in, hod@srm.ac.in, admin@srm.ac.in',
+        sheetsLink: 'https://docs.google.com/spreadsheets/d/1SRM_SPECIFIC_LINK/edit?usp=sharing'
+      }));
+    } else if (selectedCollege === 'srm-online') {
+      setEmailTemplate(prev => ({ 
+        ...prev, 
+        to: 'online.coordinator@srm.ac.in, dean@srm.ac.in, hod@srm.ac.in, admin@srm.ac.in',
+        sheetsLink: 'https://docs.google.com/spreadsheets/d/1SRM_ONLINE_SPECIFIC_LINK/edit?usp=sharing'
+      }));
+    } else if (selectedCollege === 'niet') {
+      setEmailTemplate(prev => ({ 
+        ...prev, 
+        to: 'premsagar.sharma@niet.co.in, amd@niet.co.in, director@niet.co.in, arvind.sharma@niet.co.in, ajeet.singh@niet.co.in',
+        sheetsLink: 'https://docs.google.com/spreadsheets/d/1q2jA03C5yKXD8dHcGdECbZtGpUWOZDa1_YKQO8RkXjQ/edit?usp=sharing'
+      }));
+    } else if (selectedCollege === 'karpagam') {
+      setEmailTemplate(prev => ({ 
+        ...prev, 
+        to: 'principal@karpagamtech.ac.in, dean@karpagamtech.ac.in, hod@karpagamtech.ac.in',
+        sheetsLink: 'https://docs.google.com/spreadsheets/d/1KARPAGAM_SPECIFIC_LINK/edit?usp=sharing'
+      }));
+    }
+  }, [selectedCollege]);
+
   const processExcelFile = (file: File, sheetNameToUse?: string) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -234,8 +266,8 @@ export default function EmailGeneratorPage() {
       const sheetName = sheetNameToUse || sheetNames[0];
       setSelectedSheet(sheetName);
       
-      if (selectedCollege === 'niet') {
-        // Process NIET attendance data for all sheets
+      if (selectedCollege === 'niet' || selectedCollege === 'srm') {
+        // Process attendance data for all sheets (NIET and SRM)
         processAllSheetsForNIET(workbook, sheetName);
       } else {
         // Process regular student data for other colleges
@@ -957,9 +989,9 @@ Warm regards,`;
       if (batchName === 'MS-1' || batchName.toLowerCase().includes('ms-1')) {
         return 'MERN Stack Batch 1';
       } else if (batchName === 'Java SDE-1' || batchName.toLowerCase().includes('java sde-1') || batchName.toLowerCase().includes('java sde 1')) {
-        return 'Java SDE Batch 2';
+        return 'Java SDE-1 Batch 2';
       } else if (batchName === 'Java SDE-2' || batchName.toLowerCase().includes('java sde-2') || batchName.toLowerCase().includes('java sde 2')) {
-        return 'Java SDE Batch 3';
+        return 'Java SDE-2 Batch 3';
       } else if (batchName.toLowerCase().includes('data scientist') || batchName.toLowerCase().includes('data science python')) {
         return 'Data Science Python Batch 4';
       }
@@ -1150,9 +1182,9 @@ Regards,`;
       } else if (cleaned.toLowerCase().includes('java sde-2')) {
         return 'JAVA SDE-2';
       } else if (cleaned.toLowerCase().includes('ms-1')) {
-        return 'MS-1';
+        return 'MERN Stack';
       } else if (cleaned.toLowerCase().includes('data scientist')) {
-        return 'Data Scientist';
+        return 'Data Science Python';
       }
       
       return cleaned.toUpperCase(); // Default to uppercase for consistency
@@ -1170,7 +1202,7 @@ Regards,`;
 
 <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
   <thead>
-    <tr style="background-color: #f0f0f0;">
+    <tr style="background-color: #FFE100;">
       <th style="padding: 10px; border: 1px solid #ccc; text-align: center;"><strong>S.No</strong></th>
       <th style="padding: 10px; border: 1px solid #ccc;"><strong>Topic</strong></th>
       <th style="padding: 10px; border: 1px solid #ccc;"><strong>Description</strong></th>
@@ -1223,8 +1255,25 @@ Regards,`;
       return `${dayNum} ${months[parseInt(month, 10)]} ${year}`;
     };
     
+    // Clean up batch name: remove "Attendance" suffix and normalize case
+    const cleanBatchName = (batchName: string): string => {
+      const cleaned = batchName.replace(/\s*Attendance\s*$/i, '').trim();
+      
+      // Normalize common batch names
+      if (cleaned.toLowerCase().includes('java sde-1')) {
+        return 'JAVA SDE-1';
+      } else if (cleaned.toLowerCase().includes('java sde-2')) {
+        return 'JAVA SDE-2';
+      } else if (cleaned.toLowerCase().includes('ms-1')) {
+        return 'MERN Stack';
+      } else if (cleaned.toLowerCase().includes('data scientist')) {
+        return 'Data Science Python';
+      }
+      
+      return cleaned.toUpperCase(); // Default to uppercase for consistency
+    };
     
-    const subjectTopic = selectedBatchForEmail || 'Training';
+    const subjectTopic = selectedBatchForEmail ? cleanBatchName(selectedBatchForEmail) : 'Training';
     const subjectLine = `${subjectTopic} NCET + Training NIET College Attendance ${formatDateForStudentSubject(actualDate)}`;
     
     const htmlContent = `<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">
@@ -1238,7 +1287,7 @@ Regards,`;
 
 <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
   <thead>
-    <tr style="background-color: #f0f0f0;">
+    <tr style="background-color: #FFE100;">
       <th style="padding: 10px; border: 1px solid #ccc; text-align: center;"><strong>S.No</strong></th>
       <th style="padding: 10px; border: 1px solid #ccc;"><strong>Topic</strong></th>
       <th style="padding: 10px; border: 1px solid #ccc;"><strong>Description</strong></th>
@@ -1273,9 +1322,138 @@ Regards,`;
     setPresentStudentEmailBCC(presentStudentEmails);
   };
 
+  // SRM-specific email generation functions
+  const generateSRMAbsentStudentEmail = () => {
+    const actualDate = attendanceStats?.date || selectedDate || '21/08/2025';
+    const topicsTable = generateTopicsTableFromInternReport();
+    
+    // Format date for subject line (convert from DD/MM/YYYY to DD Month YYYY)
+    const formatDateForStudentSubject = (dateStr: string): string => {
+      const [day, month, year] = dateStr.split('/');
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const monthName = monthNames[parseInt(month) - 1];
+      return `${day} ${monthName} ${year}`;
+    };
+
+    const subjectLine = `Absent Students - MyAnatomy Training Session ${formatDateForStudentSubject(actualDate)} - SRM College`;
+    
+    const htmlContent = `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+<p><strong>Subject:</strong> Absent Students - MyAnatomy Training Session ${formatDateForStudentSubject(actualDate)}</p>
+
+<p>Dear SRM Faculty,</p>
+
+<p>Greetings!</p>
+
+<p>We would like to inform you about the students who were <strong>absent</strong> during today's MyAnatomy training session held on <strong>${formatDateForStudentSubject(actualDate)}</strong>.</p>
+
+<p><strong>Session Details:</strong></p>
+<ul>
+<li><strong>Date:</strong> ${formatDateForStudentSubject(actualDate)}</li>
+<li><strong>Platform:</strong> MyAnatomy Digital Platform</li>
+<li><strong>Session Type:</strong> Interactive Training Session</li>
+</ul>
+
+${topicsTable}
+
+<p><strong>Absent Students:</strong> ${attendanceStats?.absentStudents.length || 0} students were absent today.</p>
+
+<p>The absent students have been BCC'd in this email for their awareness and necessary action.</p>
+
+<p>We request your support in ensuring better attendance for upcoming sessions. Please encourage students to maintain regular attendance for maximum benefit from the MyAnatomy training program.</p>
+
+<p>For any queries or support, please feel free to contact us at support@myanatomy.in</p>
+
+<p><strong>Best regards,</strong><br>
+MyAnatomy Team<br>
+Digital Learning Solutions</p>
+</div>`;
+
+    // Set up email fields with proper structure
+    const srmStaffEmails = 'dean@srm.ac.in, registrar@srm.ac.in, hod@srm.ac.in, admin@srm.ac.in';
+    const myAnatomyStaffEmails = 'nishi.s@myanatomy.in, sucharita@myanatomy.in';
+    
+    let absentStudentEmails = '';
+    if (attendanceStats && attendanceStats.absentStudents.length > 0) {
+      // Get emails for BCC field (the actual students)
+      absentStudentEmails = attendanceStats.absentStudents.map(student => student.email).filter(email => email).join(', ');
+    }
+
+    setAbsentStudentEmailContent(htmlContent);
+    setAbsentStudentEmailSubject(subjectLine);
+    setAbsentStudentEmailTo(srmStaffEmails);
+    setAbsentStudentEmailCC(myAnatomyStaffEmails);
+    setAbsentStudentEmailBCC(absentStudentEmails);
+  };
+
+  const generateSRMPresentStudentEmail = () => {
+    const actualDate = attendanceStats?.date || selectedDate || '21/08/2025';
+    const topicsTable = generateTopicsTableFromInternReport();
+    
+    // Format date for subject line (convert from DD/MM/YYYY to DD Month YYYY)
+    const formatDateForStudentSubject = (dateStr: string): string => {
+      const [day, month, year] = dateStr.split('/');
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const monthName = monthNames[parseInt(month) - 1];
+      return `${day} ${monthName} ${year}`;
+    };
+
+    const subjectLine = `Present Students - MyAnatomy Training Session ${formatDateForStudentSubject(actualDate)} - SRM College`;
+    
+    const htmlContent = `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+<p><strong>Subject:</strong> Present Students - MyAnatomy Training Session ${formatDateForStudentSubject(actualDate)}</p>
+
+<p>Dear SRM Faculty,</p>
+
+<p>Greetings!</p>
+
+<p>We are pleased to inform you about the students who were <strong>present</strong> during today's MyAnatomy training session held on <strong>${formatDateForStudentSubject(actualDate)}</strong>.</p>
+
+<p><strong>Session Details:</strong></p>
+<ul>
+<li><strong>Date:</strong> ${formatDateForStudentSubject(actualDate)}</li>
+<li><strong>Platform:</strong> MyAnatomy Digital Platform</li>
+<li><strong>Session Type:</strong> Interactive Training Session</li>
+</ul>
+
+${topicsTable}
+
+<p><strong>Present Students:</strong> ${attendanceStats?.presentStudents.length || 0} students attended today's session.</p>
+
+<p>The present students have been BCC'd in this email for their recognition and encouragement.</p>
+
+<p>We appreciate the active participation of these students and look forward to their continued engagement in upcoming sessions.</p>
+
+<p>For any queries or support, please feel free to contact us at support@myanatomy.in</p>
+
+<p><strong>Best regards,</strong><br>
+MyAnatomy Team<br>
+Digital Learning Solutions</p>
+</div>`;
+
+    // Set up email fields with proper structure
+    const srmStaffEmails = 'dean@srm.ac.in, registrar@srm.ac.in, hod@srm.ac.in, admin@srm.ac.in';
+    const myAnatomyStaffEmails = 'nishi.s@myanatomy.in, sucharita@myanatomy.in';
+    
+    let presentStudentEmails = '';
+    if (attendanceStats && attendanceStats.presentStudents.length > 0) {
+      // Get emails for BCC field (the actual students)
+      presentStudentEmails = attendanceStats.presentStudents.map(student => student.email).filter(email => email).join(', ');
+    }
+
+    setPresentStudentEmailContent(htmlContent);
+    setPresentStudentEmailSubject(subjectLine);
+    setPresentStudentEmailTo(srmStaffEmails);
+    setPresentStudentEmailCC(myAnatomyStaffEmails);
+    setPresentStudentEmailBCC(presentStudentEmails);
+  };
+
   const copyAbsentStudentEmail = async () => {
     if (!absentStudentEmailContent) {
-      generateAbsentStudentEmail();
+      if (selectedCollege === 'srm') {
+        generateSRMAbsentStudentEmail();
+      } else {
+        generateAbsentStudentEmail();
+      }
       return;
     }
 
@@ -1297,7 +1475,11 @@ Regards,`;
 
   const copyPresentStudentEmail = async () => {
     if (!presentStudentEmailContent) {
-      generatePresentStudentEmail();
+      if (selectedCollege === 'srm') {
+        generateSRMPresentStudentEmail();
+      } else {
+        generatePresentStudentEmail();
+      }
       return;
     }
 
@@ -1597,7 +1779,53 @@ Regards,`;
         </header>
 
         <main className="space-y-8">
-          {/* Row 1: Upload and Student Selection */}
+          {/* Welcome Message when no college is selected */}
+          {!selectedCollege && (
+            <section className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-xl p-8 text-center">
+              <div className="flex items-center justify-center mb-4">
+                <Users className="w-12 h-12 text-blue-400 mb-2" />
+              </div>
+              <h1 className="text-3xl font-bold text-white mb-4">
+                Welcome to the Attendance Management System Anushka
+              </h1>
+              <p className="text-lg text-gray-300 mb-6">
+                Select a college from the dropdown above to get started with attendance tracking and management.
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-400">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span>SRM Online</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span>SRM Offline</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                  <span>NIET</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span>Karpagam</span>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* SRM Online Component */}
+          {selectedCollege === 'srm-online' && (
+            <SRMOnline isVisible={true} />
+          )}
+
+          {/* SRM Offline Component */}
+          {selectedCollege === 'srm' && (
+            <SRMOffline isVisible={true} />
+          )}
+
+
+          {/* Row 1: Upload and Student Selection - Show only for non-SRM colleges */}
+          {selectedCollege !== 'srm-online' && selectedCollege !== 'srm' && (
+            <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Box 1: Upload Document Section */}
             <section className={`bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 transition-opacity ${!selectedCollege ? 'opacity-50' : 'opacity-100'}`}>
@@ -1619,12 +1847,12 @@ Regards,`;
                   <p className="text-xs text-gray-600 mt-1">Choose from SRM, Karpagam, or NIET above</p>
                 </div>
               </div>
-            ) : selectedCollege === 'niet' ? (
+            ) : (selectedCollege === 'niet' || selectedCollege === 'srm') ? (
               <div className="space-y-4">
                 <div className="relative border-2 border-dashed border-blue-600 rounded-lg p-8 text-center bg-blue-600/10">
                   <div className="flex flex-col items-center justify-center">
                     <FileText className="w-10 h-10 text-blue-500 mb-3" />
-                    <p className="text-white font-medium mb-2">NIET Attendance Sheet</p>
+                    <p className="text-white font-medium mb-2">{selectedCollege === 'niet' ? 'NIET' : 'SRM'} Attendance Sheet</p>
                     <p className="text-xs text-gray-400 mb-4">
                       {attendanceFile ? `Loaded: ${attendanceFile.name}` : 'Use the pre-configured attendance sheet or upload a custom one'}
                     </p>
@@ -1632,7 +1860,7 @@ Regards,`;
                       onClick={loadNIETAttendanceSheet}
                       className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
                     >
-                      Load NIET Attendance Sheet
+                      Load {selectedCollege === 'niet' ? 'NIET' : 'SRM'} Attendance Sheet
                     </button>
                   </div>
                 </div>
@@ -1798,7 +2026,7 @@ Regards,`;
             {(studentData.length > 0 || attendanceDates.length > 0) && (
               <div className="mt-4 p-4 bg-gray-700/50 rounded-lg">
                 <h3 className="text-sm font-medium text-white mb-2">
-                  {selectedCollege === 'niet' 
+                  {(selectedCollege === 'niet' || selectedCollege === 'srm')
                     ? `Attendance Data Loaded (${attendanceDates.length} dates found)`
                     : `Processed Student Data (${studentData.length} students)`
                   }
@@ -1809,7 +2037,7 @@ Regards,`;
                   )}
                 </h3>
                 <div className="max-h-32 overflow-y-auto">
-                  {selectedCollege === 'niet' ? (
+                  {(selectedCollege === 'niet' || selectedCollege === 'srm') ? (
                     attendanceDates.slice(0, 5).map((dateObj, index) => (
                       <div key={index} className="text-xs text-gray-300 py-1">
                         {dateObj.date} - {dateObj.fullText}
@@ -1822,7 +2050,7 @@ Regards,`;
                       </div>
                     ))
                   )}
-                  {selectedCollege === 'niet' ? (
+                  {(selectedCollege === 'niet' || selectedCollege === 'srm') ? (
                     attendanceDates.length > 5 && (
                       <div className="text-xs text-gray-400">...and {attendanceDates.length - 5} more dates</div>
                     )
@@ -1841,21 +2069,21 @@ Regards,`;
             <div className="flex items-center gap-3 mb-4">
               <Book className="w-5 h-5 text-gray-400" />
               <h2 className="text-lg font-semibold text-white">
-                {selectedCollege === 'niet' ? 'Attendance Analysis' : 'Select Students'}
+                {(selectedCollege === 'niet' || selectedCollege === 'srm') ? 'Attendance Analysis' : 'Select Students'}
               </h2>
             </div>
             <p className="text-sm text-gray-400 mb-4">
-              {selectedCollege === 'niet' 
+              {(selectedCollege === 'niet' || selectedCollege === 'srm')
                 ? 'Select a date to view attendance statistics.'
                 : 'Choose which students you want to send emails to.'
               }
             </p>
             {selectedCollege && isUploadComplete && (
-              (selectedCollege === 'niet' && attendanceDates.length > 0) || 
-              (selectedCollege !== 'niet' && studentData.length > 0)
+              ((selectedCollege === 'niet' || selectedCollege === 'srm') && attendanceDates.length > 0) || 
+              (selectedCollege !== 'niet' && selectedCollege !== 'srm' && studentData.length > 0)
             ) ? (
-              selectedCollege === 'niet' ? (
-                // NIET Attendance Analysis
+              (selectedCollege === 'niet' || selectedCollege === 'srm') ? (
+                // NIET and SRM Attendance Analysis
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-300">
@@ -1863,7 +2091,7 @@ Regards,`;
                     </span>
                     <div className="flex gap-2">
                       <span className="text-xs px-2 py-1 bg-blue-600 text-white rounded">
-                        NIET College
+{selectedCollege === 'niet' ? 'NIET' : 'SRM'} College
                       </span>
                       <span className="text-xs px-2 py-1 bg-green-600 text-white rounded">
                         {selectedSheetsForProcessing.size} selected | {allSheetsAttendanceData.size} processed
@@ -2738,7 +2966,7 @@ Warm regards,`.replace(/\n/g, '<br>')
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={generateAbsentStudentEmail}
+                      onClick={selectedCollege === 'srm' ? generateSRMAbsentStudentEmail : generateAbsentStudentEmail}
                       className="flex items-center gap-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-md transition-colors"
                     >
                       Generate Email
@@ -2915,7 +3143,7 @@ Warm regards,`.replace(/\n/g, '<br>')
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={generatePresentStudentEmail}
+                      onClick={selectedCollege === 'srm' ? generateSRMPresentStudentEmail : generatePresentStudentEmail}
                       className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors"
                     >
                       Generate Email
@@ -3102,6 +3330,8 @@ Warm regards,`.replace(/\n/g, '<br>')
               </div>
             </div>
           </section>
+          </>
+          )}
         </main>
       </div>
     </div>
