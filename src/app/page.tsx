@@ -104,7 +104,7 @@ export default function EmailGeneratorPage() {
   const [emailTemplate, setEmailTemplate] = useState<EmailTemplate>({
     trainingDate: '',
     batches: [],
-    sheetsLink: 'https://docs.google.com/spreadsheets/d/1q2jA03C5yKXD8dHcGdECbZtGpUWOZDa1_YKQO8RkXjQ/edit?usp=sharing',
+    sheetsLink: 'https://docs.google.com/spreadsheets/d/1X3p75fw2Uz34A-LveIhex-zAxm-VVlImNOmoZOihvMg/edit?usp=sharing',
     to: 'premsagar.sharma@niet.co.in, amd@niet.co.in, director@niet.co.in, arvind.sharma@niet.co.in, ajeet.singh@niet.co.in',
     generatedContent: ''
   });
@@ -3112,6 +3112,9 @@ Warm regards,`.replace(/\n/g, '<br>')
                     <div className="text-xs text-red-300/60 max-h-20 overflow-y-auto break-all">
                       {absentStudentEmailBCC}
                     </div>
+                    <div className="mt-2 text-xs text-red-400 font-medium">
+                      {attendanceStats ? `${attendanceStats.absent} absent students will be BCC'd` : 'No attendance data available'}
+                    </div>
                   </div>
                 )}
                 
@@ -3288,6 +3291,9 @@ Warm regards,`.replace(/\n/g, '<br>')
                     </div>
                     <div className="text-xs text-green-300/60 max-h-20 overflow-y-auto break-all">
                       {presentStudentEmailBCC}
+                    </div>
+                    <div className="mt-2 text-xs text-green-400 font-medium">
+                      {attendanceStats ? `${attendanceStats.present} present students will be BCC'd` : 'No attendance data available'}
                     </div>
                   </div>
                 )}
