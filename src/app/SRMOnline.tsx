@@ -836,7 +836,7 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
       }).join('<br><br>');
     }
 
-    const content = `<p>Dear Ma'am/Sir,<br>Greetings of the day!<br>I hope you are doing well.</p><p>This is to inform you that the training session conducted on ${formattedDate} for the <strong>NCET + Training</strong> was successfully completed. Please find below the attendance details of the students who participated in the session:</p><p>${batchContent}</p><p>I’m sharing the sheet attached in the email for your reference. It includes <strong>detailed attendance, daily Assessment, and a list of absent students</strong> during each training session.</p><p><strong>Link for Daily Attendance and Assessment:</strong> ${emailTemplate.sheetsLink}</p><p>Kindly go through the same and let us know if you have any questions or need any further information.</p><p>Thank you for your continued support and coordination.</p><p><strong>Regards,</strong></p>`;
+    const content = `<p>Dear Ma'am/Sir,<br>Greetings of the day!<br>I hope you are doing well.</p><p>This is to inform you that the training session conducted on ${formattedDate} for the <strong>NCET + Training</strong> was successfully completed. Please find below the attendance details of the students who participated in the session:</p><p><strong>${batchContent}</strong></p><p>I’m sharing the sheet attached in the email for your reference. It includes <strong>detailed attendance, daily Assessment, and a list of absent students</strong> during each training session.</p><p><strong>Link for Daily Attendance and Assessment:</strong> ${emailTemplate.sheetsLink}</p><p>Kindly go through the same and let us know if you have any questions or need any further information.</p><p>Thank you for your continued support and coordination.</p><p><strong>Regards,</strong></p>`;
 
     setEmailTemplate(prev => ({ 
       ...prev, 
@@ -1804,7 +1804,16 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
           <div className="bg-red-600/10 border border-red-500/30 rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-red-300 mb-2">Email for Absent Students</h3>
+                <div className='flex flex-row'>
+                  <h3 className="text-lg font-semibold text-red-300 mb-2">Email for Absent Students</h3>
+                  {attendanceStats && (
+                <div className="flex items-center gap-2 ml-4 -mt-1.5">
+                  <div className="bg-red-600/20 text-red-300 text-xs px-3 py-1 rounded-full">
+                    Absent: {attendanceStats.absent}
+                  </div>
+                </div>
+                )}
+                </div>
                 <p className="text-xs text-red-400/70">For students who missed the training session</p>
               </div>
               <div className="flex gap-2">
@@ -1882,7 +1891,16 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
           <div className="bg-green-600/10 border border-green-500/30 rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-green-300 mb-2">Email for Present Students</h3>
+                <div className='flex flex-row'>
+                  <h3 className="text-lg font-semibold text-green-300 mb-2">Email for Present Students</h3>
+                  {attendanceStats && (
+                <div className="flex items-center gap-2 ml-4 -mt-2">
+                  <div className="bg-green-600/20 text-green-300 text-xs px-3 py-1 rounded-full">
+                    Present: {attendanceStats.present}
+                  </div>
+                </div>
+                )}
+                </div>
                 <p className="text-xs text-green-400/70">For students who attended the training session</p>
               </div>
               <div className="flex gap-2">

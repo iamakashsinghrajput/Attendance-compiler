@@ -6,6 +6,7 @@ import { Mail, Upload, Book, Building, Moon, ChevronDown, FileText, Copy, Check,
 import * as XLSX from 'xlsx';
 import SRMOnline from './SRMOnline';
 import SRMOffline from './SRMOffline';
+import NMIETOnline from './NMIETOnline';
 
 type FileState = File | null;
 
@@ -71,7 +72,7 @@ interface EmailTemplate {
 const colleges = [
   { id: 'srm', name: 'SRM' },
   { id: 'srm-online', name: 'SRM Online' },
-  { id: 'karpagam', name: 'Karpagam' },
+  { id: 'nmiet', name: 'NMIET' },
   { id: 'niet', name: 'NIET' }
 ];
 
@@ -241,13 +242,7 @@ export default function EmailGeneratorPage() {
       setEmailTemplate(prev => ({ 
         ...prev, 
         to: 'premsagar.sharma@niet.co.in, amd@niet.co.in, director@niet.co.in, arvind.sharma@niet.co.in, ajeet.singh@niet.co.in',
-        sheetsLink: 'https://docs.google.com/spreadsheets/d/1q2jA03C5yKXD8dHcGdECbZtGpUWOZDa1_YKQO8RkXjQ/edit?usp=sharing'
-      }));
-    } else if (selectedCollege === 'karpagam') {
-      setEmailTemplate(prev => ({ 
-        ...prev, 
-        to: 'principal@karpagamtech.ac.in, dean@karpagamtech.ac.in, hod@karpagamtech.ac.in',
-        sheetsLink: 'https://docs.google.com/spreadsheets/d/1KARPAGAM_SPECIFIC_LINK/edit?usp=sharing'
+        sheetsLink: 'https://docs.google.com/spreadsheets/d/1X3p75fw2Uz34A-LveIhex-zAxm-VVlImNOmoZOihvMg/edit?gid=1842156615#gid=1842156615'
       }));
     }
   }, [selectedCollege]);
@@ -293,8 +288,9 @@ export default function EmailGeneratorPage() {
     const primaryRawData = XLSX.utils.sheet_to_json(primaryWorksheet, { header: 1, defval: '' }) as (string | number)[][];
     setRawAttendanceData(primaryRawData);
     
-    // Extract dates from row 4 (index 3), starting from column H (index 7)
-    const headerRow = primaryRawData[3] as string[];
+    // Extract dates from header row - row 4 (index 3)
+    const headerRowIndex = 3;
+    const headerRow = primaryRawData[headerRowIndex] as string[];
     const dates: AttendanceDate[] = [];
     
     for (let i = 7; i < headerRow.length; i++) {
@@ -698,6 +694,25 @@ export default function EmailGeneratorPage() {
       console.error('Failed to load NIET attendance sheet:', error);
     }
   };
+
+  const loadSRMAttendanceSheet = async () => {
+    try {
+      const response = await fetch('/SRM_online.xlsx');
+      const arrayBuffer = await response.arrayBuffer();
+      const blob = new Blob([arrayBuffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      const file = new File([blob], 'SRM_online.xlsx', { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      
+      setAttendanceFile(file);
+      processExcelFile(file);
+    } catch (error) {
+      console.error('Failed to load SRM attendance sheet:', error);
+    }
+  };
+
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -1806,7 +1821,88 @@ Digital Learning Solutions</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span>Karpagam</span>
+                  <span>NMIET</span>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* College Selection Blocks */}
+          {!selectedCollege && (
+            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+              {/* SRM Online Block */}
+              <div 
+                onClick={() => setSelectedCollege('srm-online')}
+                className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border border-blue-500/30 rounded-xl p-6 text-center cursor-pointer hover:from-blue-600/30 hover:to-blue-800/30 hover:border-blue-400/50 transition-all duration-200 group"
+              >
+                <div className="flex items-center justify-center mb-4">
+                  <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center group-hover:bg-blue-400/30 transition-colors">
+                    <Users className="w-8 h-8 text-blue-400 group-hover:text-blue-300" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">SRM Online</h3>
+                <p className="text-sm text-blue-200/80">
+                  Online attendance management for SRM students
+                </p>
+                <div className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                  Select College
+                </div>
+              </div>
+
+              {/* SRM Offline Block */}
+              <div 
+                onClick={() => setSelectedCollege('srm')}
+                className="bg-gradient-to-br from-green-600/20 to-green-800/20 border border-green-500/30 rounded-xl p-6 text-center cursor-pointer hover:from-green-600/30 hover:to-green-800/30 hover:border-green-400/50 transition-all duration-200 group"
+              >
+                <div className="flex items-center justify-center mb-4">
+                  <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center group-hover:bg-green-400/30 transition-colors">
+                    <FileText className="w-8 h-8 text-green-400 group-hover:text-green-300" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">SRM Offline</h3>
+                <p className="text-sm text-green-200/80">
+                  Traditional attendance tracking for SRM campus
+                </p>
+                <div className="mt-4 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                  Select College
+                </div>
+              </div>
+
+              {/* NIET Block */}
+              <div 
+                onClick={() => setSelectedCollege('niet')}
+                className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border border-purple-500/30 rounded-xl p-6 text-center cursor-pointer hover:from-purple-600/30 hover:to-purple-800/30 hover:border-purple-400/50 transition-all duration-200 group"
+              >
+                <div className="flex items-center justify-center mb-4">
+                  <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center group-hover:bg-purple-400/30 transition-colors">
+                    <Book className="w-8 h-8 text-purple-400 group-hover:text-purple-300" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">NIET</h3>
+                <p className="text-sm text-purple-200/80">
+                  Advanced attendance system for NIET College
+                </p>
+                <div className="mt-4 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                  Select College
+                </div>
+              </div>
+
+              {/* NMIET Block */}
+              <div 
+                onClick={() => setSelectedCollege('nmiet')}
+                className="bg-gradient-to-br from-orange-600/20 to-orange-800/20 border border-orange-500/30 rounded-xl p-6 text-center cursor-pointer hover:from-orange-600/30 hover:to-orange-800/30 hover:border-orange-400/50 transition-all duration-200 group"
+              >
+                <div className="flex items-center justify-center mb-4">
+                  <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center group-hover:bg-orange-400/30 transition-colors">
+                    <Upload className="w-8 h-8 text-orange-400 group-hover:text-orange-300" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">NMIET</h3>
+                <p className="text-sm text-orange-200/80">
+                  Attendance management for NMIET students
+                </p>
+                <div className="mt-4 px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                  Select College
                 </div>
               </div>
             </section>
@@ -1822,9 +1918,13 @@ Digital Learning Solutions</p>
             <SRMOffline isVisible={true} />
           )}
 
+          {/* NMIET Component */}
+          {selectedCollege === 'nmiet' && (
+            <NMIETOnline isVisible={true} />
+          )}
 
           {/* Row 1: Upload and Student Selection - Show only for non-SRM colleges */}
-          {selectedCollege !== 'srm-online' && selectedCollege !== 'srm' && (
+          {selectedCollege && selectedCollege !== 'srm-online' && selectedCollege !== 'srm' && selectedCollege !== 'nmiet' && (
             <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Box 1: Upload Document Section */}
@@ -1844,7 +1944,7 @@ Digital Learning Solutions</p>
                 <div className="flex flex-col items-center justify-center">
                   <Building className="w-10 h-10 text-gray-600 mb-3" />
                   <p className="text-gray-500 font-medium">Please select a college first</p>
-                  <p className="text-xs text-gray-600 mt-1">Choose from SRM, Karpagam, or NIET above</p>
+                  <p className="text-xs text-gray-600 mt-1">Choose from SRM, NMIET, or NIET above</p>
                 </div>
               </div>
             ) : (selectedCollege === 'niet' || selectedCollege === 'srm') ? (
@@ -1852,12 +1952,14 @@ Digital Learning Solutions</p>
                 <div className="relative border-2 border-dashed border-blue-600 rounded-lg p-8 text-center bg-blue-600/10">
                   <div className="flex flex-col items-center justify-center">
                     <FileText className="w-10 h-10 text-blue-500 mb-3" />
-                    <p className="text-white font-medium mb-2">{selectedCollege === 'niet' ? 'NIET' : 'SRM'} Attendance Sheet</p>
+                    <p className="text-white font-medium mb-2">
+                      {selectedCollege === 'niet' ? 'NIET' : 'SRM'} Attendance Sheet
+                    </p>
                     <p className="text-xs text-gray-400 mb-4">
                       {attendanceFile ? `Loaded: ${attendanceFile.name}` : 'Use the pre-configured attendance sheet or upload a custom one'}
                     </p>
                     <button 
-                      onClick={loadNIETAttendanceSheet}
+                      onClick={selectedCollege === 'niet' ? loadNIETAttendanceSheet : loadSRMAttendanceSheet}
                       className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
                     >
                       Load {selectedCollege === 'niet' ? 'NIET' : 'SRM'} Attendance Sheet
@@ -2808,8 +2910,9 @@ Warm regards,`.replace(/\n/g, '<br>')
             </div>
           </section>
 
-                    {/* Row 3: Intern Report Section - Full Width */}
-          <section className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
+          {/* Row 3: Intern Report Section - Full Width */}
+          {selectedCollege && (
+            <section className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <FileText className="w-5 h-5 text-gray-400" />
@@ -2910,9 +3013,11 @@ Warm regards,`.replace(/\n/g, '<br>')
               </div>
             </div>
           </section>
+          )}
 
           {/* Row 5: Student Email Templates - Full Width */}
-          <section className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
+          {selectedCollege && (
+            <section className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-gray-400" />
@@ -2961,7 +3066,16 @@ Warm regards,`.replace(/\n/g, '<br>')
               <div className="bg-red-600/10 border border-red-500/30 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-red-300 mb-2">Email for Absent Students</h3>
+                    <div className='flex flex-row'>
+                  <h3 className="text-lg font-semibold text-red-300 mb-2">Email for Absent Students</h3>
+                  {attendanceStats && (
+                <div className="flex items-center gap-2 ml-4 -mt-1.5">
+                  <div className="bg-red-600/20 text-red-300 text-xs px-3 py-1 rounded-full">
+                    Absent: {attendanceStats.absent}
+                  </div>
+                </div>
+                )}
+                </div>
                     <p className="text-xs text-red-400/70">For students who missed the training session</p>
                   </div>
                   <div className="flex gap-2">
@@ -3141,7 +3255,16 @@ Warm regards,`.replace(/\n/g, '<br>')
               <div className="bg-green-600/10 border border-green-500/30 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-green-300 mb-2">Email for Present Students</h3>
+                    <div className='flex flex-row'>
+                      <h3 className="text-lg font-semibold text-green-300 mb-2">Email for Present Students</h3>
+                      {attendanceStats && (
+                    <div className="flex items-center gap-2 ml-4 -mt-2">
+                      <div className="bg-green-600/20 text-green-300 text-xs px-3 py-1 rounded-full">
+                        Present: {attendanceStats.present}
+                      </div>
+                    </div>
+                    )}
+                    </div>
                     <p className="text-xs text-green-400/70">For students who attended the training session</p>
                   </div>
                   <div className="flex gap-2">
@@ -3336,6 +3459,7 @@ Warm regards,`.replace(/\n/g, '<br>')
               </div>
             </div>
           </section>
+          )}
           </>
           )}
         </main>
