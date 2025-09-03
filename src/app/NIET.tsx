@@ -631,7 +631,7 @@ export default function NIET({ isVisible }: NIETProps) {
     };
     
     const topicName = getTopicName(selectedEmailBatchSheet);
-    const subjectLine = `${topicName} NCET + Online Training NIET College Attendance ${formattedDate}`;
+    const subjectLine = `${topicName} NCET+ Training NIET College Attendance ${formattedDate}`;
     
     // Version for display (light text for dark UI)
     const htmlContentForDisplay = `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #E5E7EB;">
@@ -728,7 +728,7 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
     };
     
     const topicName = getTopicName(selectedEmailBatchSheet);
-    const subjectLine = `${topicName} NCET + Online Training NIET College Attendance ${formattedDate}`;
+    const subjectLine = `${topicName} NCET+ Training NIET College Attendance ${formattedDate}`;
     
     // Version for display (light text for dark UI)
     const htmlContentForDisplay = `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #E5E7EB;">
