@@ -4,24 +4,23 @@ import React, { useState, useEffect, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import { FileText, Upload, Book, Copy, Check, Mail, ChevronDown, Users } from 'lucide-react';
 
-interface SRMStudent {
+interface NIETStudent {
   serialNo: string;
+  rollNumber: string;
   name: string;
   email: string;
-  regnNumber: string;
-  contactNumber: string;
   attendance: { [key: string]: number }; // date -> 0/1
 }
 
-interface SRMAttendanceStats {
+interface NIETAttendanceStats {
   date: string;
   totalStudents: number;
   present: number;
   absent: number;
   presentPercentage: number;
   absentPercentage: number;
-  presentStudents: Array<{ name: string; email: string; regnNumber: string }>;
-  absentStudents: Array<{ name: string; email: string; regnNumber: string }>;
+  presentStudents: Array<{ name: string; email: string; rollNumber: string }>;
+  absentStudents: Array<{ name: string; email: string; rollNumber: string }>;
 }
 
 interface EmailTemplate {
@@ -33,22 +32,22 @@ interface EmailTemplate {
   generatedContent: string;
 }
 
-interface SRMOnlineProps {
+interface NIETProps {
   isVisible: boolean;
 }
 
-export default function SRMOnline({ isVisible }: SRMOnlineProps) {
+export default function NIET({ isVisible }: NIETProps) {
   // File and data states
   const [attendanceFile, setAttendanceFile] = useState<File | null>(null);
   const [availableSheets, setAvailableSheets] = useState<string[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<string>(''); // Primary sheet for date selection
   const [selectedSheetsForProcessing, setSelectedSheetsForProcessing] = useState<Set<string>>(new Set());
   const [selectedEmailBatchSheet, setSelectedEmailBatchSheet] = useState<string>(''); // For student email templates
-  const [allSheetsData, setAllSheetsData] = useState<Map<string, SRMStudent[]>>(new Map());
-  const [allSheetsAttendanceData, setAllSheetsAttendanceData] = useState<Map<string, SRMAttendanceStats>>(new Map());
+  const [allSheetsData, setAllSheetsData] = useState<Map<string, NIETStudent[]>>(new Map());
+  const [allSheetsAttendanceData, setAllSheetsAttendanceData] = useState<Map<string, NIETAttendanceStats>>(new Map());
   const [attendanceDates, setAttendanceDates] = useState<Array<{ date: string; fullText: string }>>([]);
   const [selectedDate, setSelectedDate] = useState<string>('');
-  const [attendanceStats, setAttendanceStats] = useState<SRMAttendanceStats | null>(null);
+  const [attendanceStats, setAttendanceStats] = useState<NIETAttendanceStats | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isUploadComplete, setIsUploadComplete] = useState(false);
 
@@ -76,9 +75,9 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
   const [emailTemplate, setEmailTemplate] = useState<EmailTemplate>({
     trainingDate: '',
     batches: [],
-    sheetsLink: 'https://docs.google.com/spreadsheets/d/1SRM_ONLINE_LINK/edit?usp=sharing',
-    to: 'DEAN NCR <dean.ncr@srmist.edu.in>, hod.cse.ncr@srmist.edu.in, DEAN IQAC NCR <dean.iqac.ncr@srmist.edu.in>, "placement.ncr SRMUP" <placement.ncr@srmup.in>, karunag@srmist.edu.in, SRM CRC <placement@srmimt.net>, Niranjan Lal <niranjal@srmist.edu.in>, vinayk@srmist.edu.in, shivams@srmist.edu.in, sunilk3@srmist.edu.in, anandk2@srmist.edu.in',
-    cc: 'Nishi Sharma <nishi.s@myanatomy.in>, Siddharth Sundar <siddharth.sundar@myanatomy.in>, CHINMAY KUMAR <ckd@myanatomy.in>',
+    sheetsLink: 'https://docs.google.com/spreadsheets/d/1X3p75fw2Uz34A-LveIhex-zAxm-VVlImNOmoZOihvMg/edit?gid=1842156615#gid=1842156615',
+    to: 'premsagar.sharma@niet.co.in, amd@niet.co.in, director@niet.co.in, arvind.sharma@niet.co.in, ajeet.singh@niet.co.in',
+    cc: 'nishi.s@myanatomy.in, sucharita@myanatomy.in',
     generatedContent: ''
   });
   const [copiedEmailTemplate, setCopiedEmailTemplate] = useState<boolean>(false);
@@ -99,7 +98,7 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
   const [internReport, setInternReport] = useState<string>('');
   const [internReportExpanded, setInternReportExpanded] = useState<boolean>(false);
 
-  const calculateAttendanceStats = useCallback((date: string): SRMAttendanceStats | null => {
+  const calculateAttendanceStats = useCallback((date: string): NIETAttendanceStats | null => {
     console.log('CALC STATS DEBUG - Starting calculation for PRIMARY BATCH ONLY:', {
       date,
       primarySheet: selectedSheet,
@@ -125,8 +124,8 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
       return null;
     }
     
-    const presentStudents: Array<{ name: string; email: string; regnNumber: string }> = [];
-    const absentStudents: Array<{ name: string; email: string; regnNumber: string }> = [];
+    const presentStudents: Array<{ name: string; email: string; rollNumber: string }> = [];
+    const absentStudents: Array<{ name: string; email: string; rollNumber: string }> = [];
     
     // Process students from PRIMARY BATCH ONLY
     primarySheetData.forEach(student => {
@@ -135,13 +134,13 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
         presentStudents.push({
           name: student.name,
           email: student.email,
-          regnNumber: student.regnNumber
+          rollNumber: student.rollNumber
         });
       } else if (attendanceValue === 0) {
         absentStudents.push({
           name: student.name,
           email: student.email,
-          regnNumber: student.regnNumber
+          rollNumber: student.rollNumber
         });
       }
     });
@@ -175,14 +174,14 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
       setAttendanceStats(stats);
       
       // Calculate stats for all sheets
-      const allSheetStats = new Map<string, SRMAttendanceStats>();
+      const allSheetStats = new Map<string, NIETAttendanceStats>();
       selectedSheetsForProcessing.forEach(sheetName => {
         const sheetData = allSheetsData.get(sheetName);
         if (sheetData) {
           const presentStudents = sheetData.filter(student => student.attendance[selectedDate] === 1)
-            .map(student => ({ name: student.name, email: student.email, regnNumber: student.regnNumber }));
+            .map(student => ({ name: student.name, email: student.email, rollNumber: student.rollNumber }));
           const absentStudents = sheetData.filter(student => student.attendance[selectedDate] === 0)
-            .map(student => ({ name: student.name, email: student.email, regnNumber: student.regnNumber }));
+            .map(student => ({ name: student.name, email: student.email, rollNumber: student.rollNumber }));
           
           const totalStudents = presentStudents.length + absentStudents.length;
           const presentPercentage = totalStudents > 0 ? Math.round((presentStudents.length / totalStudents) * 100) : 0;
@@ -207,9 +206,22 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
   if (!isVisible) return null;
 
   // Functions
-  const loadSRMOnlineAttendanceSheet = () => {
-    // This would load a pre-configured attendance sheet for SRM Online
-    console.log('Loading SRM Online attendance sheet...');
+  const loadNIETAttendanceSheet = async () => {
+    try {
+      const response = await fetch('/Common Attendance Sheet data_NIET College.xlsx');
+      const arrayBuffer = await response.arrayBuffer();
+      const blob = new Blob([arrayBuffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      const file = new File([blob], 'Common Attendance Sheet data_NIET College.xlsx', { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      
+      setAttendanceFile(file);
+      processAttendanceFile(file);
+    } catch (error) {
+      console.error('Failed to load NIET attendance sheet:', error);
+    }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -244,11 +256,11 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
         
         // Get available sheets and filter to only include the 4 specified batch names
         const allSheetNames = workbook.SheetNames;
-        const validSheetNames = ['MS1', 'MS2', 'AI/ML-1', 'AI/ML-2', 'AI/ML1', 'AI/ML2', 'AIML1', 'AIML2'];
-        const sheetNames = allSheetNames.filter(name => validSheetNames.includes(name));
+        const validSheetNames = ['MS1 Attendance', 'MS-1 Attendance', 'JAVA SDE-1 Attendance', 'JAVA SDE-2 Attendance', 'Data Scientist Attendance'];
+        const sheetNames = allSheetNames.filter(name => validSheetNames.map(n => n.toLowerCase().trim()).includes(name.toLowerCase().trim()));
         
         console.log('All sheet names in workbook:', allSheetNames);
-        console.log('Valid SRM Online sheet names found:', sheetNames);
+        console.log('Valid NIET sheet names found:', sheetNames);
         
         setAvailableSheets(sheetNames);
         
@@ -263,13 +275,13 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
         }
         
         // Process each sheet
-        const allData = new Map<string, SRMStudent[]>();
+        const allData = new Map<string, NIETStudent[]>();
         const dateMap = new Map<string, { date: string; fullText: string }>(); // Use Map to prevent duplicates by date
         
         sheetNames.forEach(sheetName => {
           console.log(`Processing sheet: ${sheetName}`);
           const worksheet = workbook.Sheets[sheetName];
-          const sheetData = processSRMSheet(worksheet, sheetName);
+          const sheetData = processNIETSheet(worksheet, sheetName);
           console.log(`Sheet ${sheetName} processed students:`, sheetData.length);
           console.log(`First few students:`, sheetData.slice(0, 3));
           
@@ -350,9 +362,9 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
     reader.readAsArrayBuffer(file);
   };
 
-  const processSRMSheet = (worksheet: XLSX.WorkSheet, sheetName: string): SRMStudent[] => {
+  const processNIETSheet = (worksheet: XLSX.WorkSheet, sheetName: string): NIETStudent[] => {
     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-    const students: SRMStudent[] = [];
+    const students: NIETStudent[] = [];
     
     console.log(`Processing sheet ${sheetName}:`, {
       totalRows: jsonData.length,
@@ -364,56 +376,24 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
       return students;
     }
 
-    // Define row ranges for each batch (0-based indexing, but we start from row 5 = index 4)
-    // Handle multiple naming conventions for AIML batches
-    const batchRowRanges: { [key: string]: { start: number; end: number } } = {
-      'MS1': { start: 4, end: 135 },      // Row 5 to 135 (0-based: 4 to 135)
-      'MS2': { start: 4, end: 114 },      // Row 5 to 114 (0-based: 4 to 114)
-      'AI/ML-1': { start: 4, end: 104 },  // Row 5 to 104 (0-based: 4 to 104)
-      'AI/ML-2': { start: 4, end: 111 },  // Row 5 to 111 (0-based: 4 to 111)
-      'AI/ML1': { start: 4, end: 104 },   // Alternative naming: Row 5 to 104 (0-based: 4 to 104)
-      'AI/ML2': { start: 4, end: 111 },   // Alternative naming: Row 5 to 111 (0-based: 4 to 111)
-      'AIML1': { start: 4, end: 104 },    // Excel file naming: Row 5 to 104 (0-based: 4 to 104)
-      'AIML2': { start: 4, end: 111 }     // Excel file naming: Row 5 to 111 (0-based: 4 to 111)
-    };
-
-    const rowRange = batchRowRanges[sheetName];
-    if (!rowRange) {
-      console.warn(`Unknown sheet name: ${sheetName}, processing all available rows`);
-    }
-    
-    // Get header row to find date columns (header is in row 3, not row 0)
+    // Get header row to find date columns (header is in row 4, index 3)
     const headerRow = jsonData[3] as unknown[];
     const dateColumns: { [key: number]: string } = {};
     
-    console.log(`Header row for ${sheetName} (Row 3):`, headerRow);
+    console.log(`Header row for ${sheetName} (Row 4):`, headerRow);
     
-    // Find date columns starting from column F (index 5)
-    for (let i = 5; i < headerRow.length; i++) {
+    // Find date columns starting from column H (index 7)
+    for (let i = 7; i < headerRow.length; i++) {
       const cellValue = headerRow[i];
       if (cellValue) {
         const cellStr = String(cellValue).trim();
         console.log(`Header cell ${i}:`, cellStr);
         
-        // Check if it's a date in various formats, including dates with time info
-        // Look for patterns like "04-08-2025(7:00 pm to 9:00 pm)" or "04-08-2025"
-        const dateMatch = cellStr.match(/(\d{1,2}[-\/]\d{1,2}[-\/]\d{4})/);
+        // Extract DD/MM/YYYY from DD/MM/YYYY(Time) format
+        const dateMatch = cellStr.match(/(\d{2}\/\d{2}\/\d{4})/);
         
-        // Also check for Excel serial date numbers (common in .xlsx files)
-        if (!dateMatch && !isNaN(Number(cellStr))) {
-          const excelDate = Number(cellStr);
-          if (excelDate > 40000 && excelDate < 50000) { // Rough range for 2009-2037
-            // Convert Excel serial date to JS date
-            const jsDate = new Date((excelDate - 25569) * 86400 * 1000);
-            const day = String(jsDate.getDate()).padStart(2, '0');
-            const month = String(jsDate.getMonth() + 1).padStart(2, '0');
-            const year = jsDate.getFullYear();
-            dateColumns[i] = `${day}-${month}-${year}`;
-            console.log(`Converted Excel date ${excelDate} to ${day}-${month}-${year}`);
-          }
-        } else if (dateMatch) {
-          // Extract just the date part, ignore time info
-          const normalizedDate = dateMatch[1].replace(/\//g, '-');
+        if (dateMatch) {
+          const normalizedDate = dateMatch[1].replace(/\//g, '-'); // Convert to DD-MM-YYYY
           dateColumns[i] = normalizedDate;
           console.log(`Found date in header: ${normalizedDate} (from: ${cellStr})`);
         }
@@ -422,9 +402,9 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
     
     console.log(`Found date columns in ${sheetName}:`, dateColumns);
     
-    // Process student data using batch-specific row ranges
-    const startRow = rowRange ? rowRange.start : 1; // Default to row 2 (index 1) if no range specified
-    const endRow = rowRange ? Math.min(rowRange.end + 1, jsonData.length) : jsonData.length;
+    // Process student data starting from row 5 (index 4)
+    const startRow = 4; 
+    const endRow = jsonData.length;
     
     console.log(`Processing rows ${startRow} to ${endRow} for ${sheetName}`);
     
@@ -432,18 +412,17 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
     for (let i = startRow; i < endRow; i++) {
       const row = jsonData[i] as unknown[];
       
-      if (!row || row.length < 5) {
+      if (!row || row.length < 8) { // Ensure enough columns for S.No, Roll, Name, Email, and at least one date
         console.log(`Skipping row ${i}: insufficient columns`);
         continue;
       }
       
       const serialNo = row[0] ? String(row[0]).trim() : '';
-      const name = row[1] ? String(row[1]).trim() : '';
-      const email = row[2] ? String(row[2]).trim() : '';
-      const regnNumber = row[3] ? String(row[3]).trim() : '';
-      const contactNumber = row[4] ? String(row[4]).trim() : '';
+      const rollNumber = row[1] ? String(row[1]).trim() : '';
+      const name = row[2] ? String(row[2]).trim() : '';
+      const email = row[3] ? String(row[3]).trim() : '';
       
-      // Skip header rows and empty names, but be more lenient
+      // Skip header rows and empty names
       if (!name || name === '' || name.trim() === '' || 
           name.toLowerCase().includes('name') || 
           name.toLowerCase().includes('s.no') ||
@@ -460,16 +439,15 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
         
         if (attendanceValue !== undefined && attendanceValue !== null && attendanceValue !== '') {
           const numValue = parseInt(String(attendanceValue));
-          attendance[date] = numValue === 1 ? 1 : 0;
+          attendance[date] = numValue === 1 ? 1 : 0; // 0 for absent, 1 for present
         }
       });
       
       students.push({
         serialNo,
+        rollNumber,
         name,
         email,
-        regnNumber,
-        contactNumber,
         attendance
       });
       
@@ -527,7 +505,7 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
           const data = e.target?.result;
           const workbook = XLSX.read(data, { type: 'array' });
           const worksheet = workbook.Sheets[sheetName];
-          const sheetData = processSRMSheet(worksheet, sheetName);
+          const sheetData = processNIETSheet(worksheet, sheetName);
           
           // Extract dates from the new primary sheet
           const dateMap = new Map<string, { date: string; fullText: string }>();
@@ -563,9 +541,19 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
     }
   };
 
+  useEffect(() => {
+    if (selectedEmailBatchSheet) {
+      generateAbsentStudentEmail();
+      generatePresentStudentEmail();
+    }
+  }, [selectedEmailBatchSheet, internReport, allSheetsAttendanceData, selectedDate]);
+
   // Email generation functions
-  const generateAbsentStudentEmail = () => {
-    if (!attendanceStats) return;
+  const generateAbsentStudentEmail = useCallback(() => {
+    if (!selectedEmailBatchSheet || !allSheetsAttendanceData.has(selectedEmailBatchSheet)) return;
+
+    const batchStats = allSheetsAttendanceData.get(selectedEmailBatchSheet);
+    if (!batchStats) return; // Should not happen due to has() check, but for type safety
     
     const formatDateForEmail = (dateStr: string): string => {
       const [day, month, year] = dateStr.split('-');
@@ -574,8 +562,25 @@ export default function SRMOnline({ isVisible }: SRMOnlineProps) {
       return `${day} ${monthName} ${year}`;
     };
 
-    const formattedDate = formatDateForEmail(attendanceStats.date);
-    const subjectLine = `${selectedSheet} NCET + Online Training SRM College Attendance ${formattedDate}`;
+    const formattedDate = formatDateForEmail(batchStats.date);
+    
+    // Map sheet names to proper topic names for subject line
+    const getTopicName = (sheetName: string): string => {
+      const name = sheetName.toLowerCase();
+      if (name.includes('ms-1') || name.includes('mern')) {
+        return 'MERN Stack';
+      } else if (name.includes('java sde-1') || name.includes('java sde 1')) {
+        return 'JAVA SDE-1';
+      } else if (name.includes('java sde-2') || name.includes('java sde 2')) {
+        return 'JAVA SDE-2';
+      } else if (name.includes('data scientist') || name.includes('python')) {
+        return 'Data Science Python';
+      }
+      return sheetName; // fallback to original name
+    };
+    
+    const topicName = getTopicName(selectedEmailBatchSheet);
+    const subjectLine = `${topicName} NCET + Online Training NIET College Attendance ${formattedDate}`;
     
     // Version for display (light text for dark UI)
     const htmlContentForDisplay = `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #E5E7EB;">
@@ -625,27 +630,43 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
 <p>Regards,</p>
 </div>`;
 
-    const srmStaffEmails = 'online.coordinator@srm.ac.in, dean@srm.ac.in, hod@srm.ac.in, admin@srm.ac.in';
-    const myAnatomyStaffEmails = 'nishi.s@myanatomy.in';
+    const nietStaffEmails = 'premsagar.sharma@niet.co.in, "Dr. Neema Agarwal" <amd@niet.co.in>, "Dr. Vinod M Kapse" <director@niet.co.in>, arvind.sharma@niet.co.in, ajeet.singh@niet.co.in';
+    const myAnatomyStaffEmails = 'nishi.s@myanatomy.in, sucharita@myanatomy.in';
     
     let absentStudentEmails = '';
-    if (attendanceStats && attendanceStats.absentStudents.length > 0) {
-      absentStudentEmails = attendanceStats.absentStudents.map(student => student.email).filter(email => email).join(', ');
+    if (batchStats && batchStats.absentStudents.length > 0) {
+      absentStudentEmails = batchStats.absentStudents.map(student => student.email).filter(email => email).join(', ');
     }
 
     setAbsentStudentEmailContent(htmlContentForDisplay);
     setAbsentStudentEmailContentForCopy(htmlContentForCopy);
     setAbsentStudentEmailSubject(subjectLine);
-    setAbsentStudentEmailTo(srmStaffEmails);
+    setAbsentStudentEmailTo(nietStaffEmails);
     setAbsentStudentEmailCC(myAnatomyStaffEmails);
     setAbsentStudentEmailBCC(absentStudentEmails);
-  };
+  }, [selectedEmailBatchSheet, internReport, allSheetsAttendanceData]);;
 
   const formatInternReportToTable = (content: string): string => {
     if (!content.trim()) return '';
     
     const lines = content.split('\n').filter(line => line.trim());
     
+    const getTopicDisplayName = (sheetName: string): string => {
+      const sheetLower = sheetName.toLowerCase();
+      if (sheetLower.includes('ms-1') || sheetLower.includes('mern')) {
+        return 'MERN Stack';
+      } else if (sheetLower.includes('java sde-1') || sheetLower.includes('java sde 1')) {
+        return 'JAVA SDE';
+      } else if (sheetLower.includes('java sde-2') || sheetLower.includes('java sde 2')) {
+        return 'JAVA SDE';
+      } else if (sheetLower.includes('data scientist') || sheetLower.includes('python')) {
+        return 'Data Science';
+      }
+      return sheetName; // Fallback to original name if no match
+    };
+
+    const topicDisplayName = getTopicDisplayName(selectedEmailBatchSheet);
+
     // Create table header
     let tableHTML = `
     <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
@@ -664,7 +685,7 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
       tableHTML += `
         <tr style="background-color: #ffffff;">
           <td style="border: 1px solid #000000; padding: 8px; text-align: center;">1</td>
-          <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-weight: bold;">${selectedSheet}</td>
+          <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-weight: bold;">${topicDisplayName}</td>
           <td style="border: 1px solid #000000; padding: 8px; text-align: left;">${numberedDescription}</td>
         </tr>`;
     }
@@ -676,8 +697,11 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
     return tableHTML;
   };
 
-  const generatePresentStudentEmail = () => {
-    if (!attendanceStats) return;
+  const generatePresentStudentEmail = useCallback(() => {
+    if (!selectedEmailBatchSheet || !allSheetsAttendanceData.has(selectedEmailBatchSheet)) return;
+
+    const batchStats = allSheetsAttendanceData.get(selectedEmailBatchSheet);
+    if (!batchStats) return; // Should not happen due to has() check, but for type safety
     
     const formatDateForEmail = (dateStr: string): string => {
       const [day, month, year] = dateStr.split('-');
@@ -686,8 +710,25 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
       return `${day} ${monthName} ${year}`;
     };
 
-    const formattedDate = formatDateForEmail(attendanceStats.date);
-    const subjectLine = `${selectedSheet} NCET + Online Training SRM College Attendance ${formattedDate}`;
+    const formattedDate = formatDateForEmail(batchStats.date);
+    
+    // Map sheet names to proper topic names for subject line
+    const getTopicName = (sheetName: string): string => {
+      const name = sheetName.toLowerCase();
+      if (name.includes('ms-1') || name.includes('mern')) {
+        return 'MERN Stack';
+      } else if (name.includes('java sde-1') || name.includes('java sde 1')) {
+        return 'JAVA SDE-1';
+      } else if (name.includes('java sde-2') || name.includes('java sde 2')) {
+        return 'JAVA SDE-2';
+      } else if (name.includes('data scientist') || name.includes('python')) {
+        return 'Data Science Python';
+      }
+      return sheetName; // fallback to original name
+    };
+    
+    const topicName = getTopicName(selectedEmailBatchSheet);
+    const subjectLine = `${topicName} NCET + Online Training NIET College Attendance ${formattedDate}`;
     
     // Version for display (light text for dark UI)
     const htmlContentForDisplay = `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #E5E7EB;">
@@ -728,21 +769,21 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
 <p>Regards,</p>
 </div>`;
 
-    const srmStaffEmails = 'online.coordinator@srm.ac.in, dean@srm.ac.in, hod@srm.ac.in, admin@srm.ac.in';
-    const myAnatomyStaffEmails = 'nishi.s@myanatomy.in';
+    const nietStaffEmails = 'premsagar.sharma@niet.co.in, "Dr. Neema Agarwal" <amd@niet.co.in>, "Dr. Vinod M Kapse" <director@niet.co.in>, arvind.sharma@niet.co.in, ajeet.singh@niet.co.in';
+    const myAnatomyStaffEmails = 'nishi.s@myanatomy.in, sucharita@myanatomy.in';
     
     let presentStudentEmails = '';
-    if (attendanceStats && attendanceStats.presentStudents.length > 0) {
-      presentStudentEmails = attendanceStats.presentStudents.map(student => student.email).filter(email => email).join(', ');
+    if (batchStats && batchStats.presentStudents.length > 0) {
+      presentStudentEmails = batchStats.presentStudents.map(student => student.email).filter(email => email).join(', ');
     }
 
     setPresentStudentEmailContent(htmlContentForDisplay);
     setPresentStudentEmailContentForCopy(htmlContentForCopy);
     setPresentStudentEmailSubject(subjectLine);
-    setPresentStudentEmailTo(srmStaffEmails);
+    setPresentStudentEmailTo(nietStaffEmails);
     setPresentStudentEmailCC(myAnatomyStaffEmails);
     setPresentStudentEmailBCC(presentStudentEmails);
-  };
+  }, [selectedEmailBatchSheet, internReport, allSheetsAttendanceData]);
 
   // Copy functions
   const copyAbsentStudentEmail = async () => {
@@ -789,25 +830,19 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
 
   // Get students from selected batch only
   const getSelectedBatchStudents = (present: boolean) => {
-    if (!attendanceStats || !selectedEmailBatchSheet) {
-      return present ? attendanceStats?.presentStudents || [] : attendanceStats?.absentStudents || [];
-    }
-    
-    const sheetData = allSheetsData.get(selectedEmailBatchSheet);
-    if (!sheetData) {
+    if (!selectedEmailBatchSheet) {
+      // If no batch is selected for email, return empty list
       return [];
     }
     
-    return sheetData
-      .filter(student => {
-        const attendanceValue = student.attendance[selectedDate];
-        return present ? attendanceValue === 1 : attendanceValue === 0;
-      })
-      .map(student => ({
-        name: student.name,
-        email: student.email,
-        regnNumber: student.regnNumber
-      }));
+    const batchStats = allSheetsAttendanceData.get(selectedEmailBatchSheet);
+    
+    if (!batchStats) {
+      // If stats for the selected batch are not available, return empty list
+      return [];
+    }
+    
+    return present ? batchStats.presentStudents : batchStats.absentStudents;
   };
 
   const copyAbsentEmails = async () => {
@@ -874,7 +909,7 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
     }));
     
     // Also set the subject line separately
-    setEmailTemplateSubject(`SRM Ghaziabad College NCET + Training Attendance for ${formattedDate}`);
+    setEmailTemplateSubject(`NIET College NCET + Training Attendance for ${formattedDate}`);
   };
 
   const copyEmailTemplate = async () => {
@@ -1004,21 +1039,17 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
     let batchId = 1;
     
     for (const [sheetName, sheetStats] of allSheetsAttendanceData.entries()) {
-      let batchName = sheetName;
+      let batchName = sheetName; // Default to sheetName
       const sheetLower = sheetName.toLowerCase();
       
-      if (sheetLower.includes('cloud') && sheetLower.includes('1')) {
-        batchName = 'Cloud Batch 1';
-      } else if (sheetLower.includes('cloud') && sheetLower.includes('2')) {
-        batchName = 'Cloud Batch 2';
-      } else if ((sheetLower.includes('aiml') || sheetLower.includes('ai')) && sheetLower.includes('1')) {
-        batchName = 'AIML Batch 1';
-      } else if ((sheetLower.includes('aiml') || sheetLower.includes('ai')) && sheetLower.includes('2')) {
-        batchName = 'AIML Batch 2';
-      } else if (sheetLower.includes('ms1')) {
-        batchName = 'Cloud Batch-1';
-      } else if (sheetLower.includes('ms2')) {
-        batchName = 'Cloud Batch-2';
+      if (sheetLower.includes('ms1 attendance') || sheetLower.includes('ms-1 attendance')) {
+        batchName = 'MERN Stack Batch 1';
+      } else if (sheetLower.includes('java sde-1 attendance')) {
+        batchName = 'Java SDE-1 Batch 2';
+      } else if (sheetLower.includes('java sde-2 attendance')) {
+        batchName = 'Java SDE-2 Batch 3';
+      } else if (sheetLower.includes('data scientist attendance')) {
+        batchName = 'Data Science Python Batch 4';
       }
       
       batchData.push({
@@ -1046,7 +1077,7 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
             <Upload className="w-5 h-5 text-gray-400" />
             <h2 className="text-lg font-semibold text-white">Upload Files</h2>
             <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
-              SRM Online
+              NIET
             </span>
           </div>
           
@@ -1055,15 +1086,15 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
             <div className="relative border-2 border-dashed border-blue-600 rounded-lg p-8 text-center bg-blue-600/10">
               <div className="flex flex-col items-center justify-center">
                 <FileText className="w-10 h-10 text-blue-500 mb-3" />
-                <p className="text-white font-medium mb-2">SRM Online Attendance Sheet</p>
+                <p className="text-white font-medium mb-2">NIET Attendance Sheet</p>
                 <p className="text-xs text-gray-400 mb-4">
                   {attendanceFile ? `Loaded: ${attendanceFile.name}` : 'Use the pre-configured attendance sheet or upload a custom one'}
                 </p>
                 <button 
-                  onClick={loadSRMOnlineAttendanceSheet}
+                  onClick={loadNIETAttendanceSheet}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
                 >
-                  Load SRM Online Attendance Sheet
+                  Load NIET Attendance Sheet
                 </button>
               </div>
             </div>
@@ -1140,7 +1171,6 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
                   {availableSheets.map((sheetName) => (
                     <option key={sheetName} value={sheetName} className="text-white bg-gray-700">
                       📊 {sheetName}
-                      {' - Rows 5-' + (sheetName === 'MS1' ? '135' : sheetName === 'MS2' ? '114' : sheetName.includes('AIML1') || sheetName.includes('AI/ML-1') || sheetName.includes('AI/ML1') ? '104' : '111')}
                     </option>
                   ))}
                 </select>
@@ -1164,53 +1194,26 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
                 </div>
               </div>
               
-              <div className="flex gap-4">
-                <div className="w-1/2 space-y-2">
-                  {availableSheets
-                    .filter(sheetName => ['MS1', 'AI/ML-1', 'AI/ML1', 'AIML1'].includes(sheetName))
-                    .map((sheetName) => (
-                      <label
-                        key={sheetName}
-                        className="flex items-center gap-3 p-2 hover:bg-gray-600/50 rounded cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedSheetsForProcessing.has(sheetName)}
-                          onChange={() => handleSheetSelectionToggle(sheetName)}
-                          className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                        />
-                        <div className="flex-1">
-                          <div className="text-sm text-white font-medium">📊 {sheetName}</div>
-                          <div className="text-xs text-blue-400">
-                            SRM Online Batch - Rows 5-{sheetName === 'MS1' ? '135' : '104'}
-                          </div>
-                        </div>
-                      </label>
-                    ))}
-                </div>
-                <div className="w-1/2 space-y-2">
-                  {availableSheets
-                    .filter(sheetName => ['MS2', 'AI/ML-2', 'AI/ML2', 'AIML2'].includes(sheetName))
-                    .map((sheetName) => (
-                      <label
-                        key={sheetName}
-                        className="flex items-center gap-3 p-2 hover:bg-gray-600/50 rounded cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedSheetsForProcessing.has(sheetName)}
-                          onChange={() => handleSheetSelectionToggle(sheetName)}
-                          className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                        />
-                        <div className="flex-1">
-                          <div className="text-sm text-white font-medium">📊 {sheetName}</div>
-                          <div className="text-xs text-blue-400">
-                            SRM Online Batch - Rows 5-{sheetName === 'MS2' ? '114' : '111'}
-                          </div>
-                        </div>
-                      </label>
-                    ))}
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {availableSheets.map((sheetName) => (
+                  <label
+                    key={sheetName}
+                    className="flex items-center gap-3 p-2 hover:bg-gray-600/50 rounded cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedSheetsForProcessing.has(sheetName)}
+                      onChange={() => handleSheetSelectionToggle(sheetName)}
+                      className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                    />
+                    <div className="flex-1">
+                      <div className="text-sm text-white font-medium">📊 {sheetName}</div>
+                      <div className="text-xs text-blue-400">
+                        NIET Batch
+                      </div>
+                    </div>
+                  </label>
+                ))}
               </div>
             </div>
           )}
@@ -1241,7 +1244,7 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
                 </span>
                 <div className="flex gap-2">
                   <span className="text-xs px-2 py-1 bg-blue-600 text-white rounded">
-                    SRM Online
+                    NIET
                   </span>
                   <span className="text-xs px-2 py-1 bg-green-600 text-white rounded">
                     {selectedSheetsForProcessing.size} selected | {allSheetsAttendanceData.size} processed
@@ -1842,10 +1845,10 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
               <div>
                 <div className='flex flex-row'>
                   <h3 className="text-lg font-semibold text-red-300 mb-2">Email for Absent Students</h3>
-                  {attendanceStats && (
+                  {selectedEmailBatchSheet && allSheetsAttendanceData.has(selectedEmailBatchSheet) && (
                 <div className="flex items-center gap-2 ml-4 -mt-1.5">
                   <div className="bg-red-600/20 text-red-300 text-xs px-3 py-1 rounded-full">
-                    Absent: {attendanceStats.absent}
+                    Absent: {allSheetsAttendanceData.get(selectedEmailBatchSheet)?.absent}
                   </div>
                 </div>
                 )}
@@ -1910,7 +1913,7 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
                   </button>
                 </div>
                 <div className="mt-2 text-xs text-red-400 font-medium">
-                  {attendanceStats ? `${attendanceStats.absent} absent students will be BCC'd` : 'No attendance data available'}
+                  {selectedEmailBatchSheet && allSheetsAttendanceData.has(selectedEmailBatchSheet) ? `${allSheetsAttendanceData.get(selectedEmailBatchSheet)?.absent} absent students will be BCC'd` : 'No attendance data available for selected batch'}
                 </div>
 
                 <div className="bg-gray-800 rounded p-3 max-h-64 overflow-y-auto">
@@ -1929,10 +1932,10 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
               <div>
                 <div className='flex flex-row'>
                   <h3 className="text-lg font-semibold text-green-300 mb-2">Email for Present Students</h3>
-                  {attendanceStats && (
+                  {selectedEmailBatchSheet && allSheetsAttendanceData.has(selectedEmailBatchSheet) && (
                 <div className="flex items-center gap-2 ml-4 -mt-2">
                   <div className="bg-green-600/20 text-green-300 text-xs px-3 py-1 rounded-full">
-                    Present: {attendanceStats.present}
+                    Present: {allSheetsAttendanceData.get(selectedEmailBatchSheet)?.present}
                   </div>
                 </div>
                 )}
@@ -1997,7 +2000,7 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
                   </button>
                 </div>
                 <div className="mt-2 text-xs text-green-400 font-medium">
-                  {attendanceStats ? `${attendanceStats.present} present students will be BCC'd` : 'No attendance data available'}
+                  {selectedEmailBatchSheet && allSheetsAttendanceData.has(selectedEmailBatchSheet) ? `${allSheetsAttendanceData.get(selectedEmailBatchSheet)?.present} present students will be BCC'd` : 'No attendance data available for selected batch'}
                 </div>
 
                 <div className="bg-gray-800 rounded p-3 max-h-64 overflow-y-auto">

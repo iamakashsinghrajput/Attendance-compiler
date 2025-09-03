@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx';
 import SRMOnline from './SRMOnline';
 import SRMOffline from './SRMOffline';
 import NMIETOnline from './NMIETOnline';
+import NIET from './NIET';
 
 type FileState = File | null;
 
@@ -85,7 +86,7 @@ export default function EmailGeneratorPage() {
   const [copiedEmailIndex, setCopiedEmailIndex] = useState<number | null>(null);
   const [copiedSubject, setCopiedSubject] = useState<boolean>(false);
   const [emailsSent, setEmailsSent] = useState<Set<number>>(new Set());
-  // NIET attendance analysis states
+  // attendance analysis states
   const [attendanceDates, setAttendanceDates] = useState<AttendanceDate[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [attendanceStats, setAttendanceStats] = useState<AttendanceStats | null>(null);
@@ -187,40 +188,20 @@ export default function EmailGeneratorPage() {
       document.ondragstart = () => false;
     };
 
-    const disablePrintScreen = (e: KeyboardEvent) => {
-      // Disable Print Screen
-      if (e.key === 'PrintScreen') {
-        e.preventDefault();
-        return false;
-      }
-    };
-
     // Add event listeners
     document.addEventListener('contextmenu', disableRightClick);
     document.addEventListener('keydown', disableKeyboardShortcuts);
-    document.addEventListener('keydown', disablePrintScreen);
     
     // Disable text selection and drag
-    disableTextSelection();
-    
-    // Disable developer tools detection (basic)
-    const devToolsDetection = () => {
-      if (window.outerHeight - window.innerHeight > 200 || window.outerWidth - window.innerWidth > 200) {
-        document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#000;color:#fff;font-family:Arial,sans-serif;">Access Denied</div>';
-      }
-    };
-    
-    // Check for developer tools periodically
-    const detectionInterval = setInterval(devToolsDetection, 1000);
+    document.onselectstart = () => false;
+    document.ondragstart = () => false;
 
     // Cleanup event listeners
     return () => {
       document.removeEventListener('contextmenu', disableRightClick);
       document.removeEventListener('keydown', disableKeyboardShortcuts);
-      document.removeEventListener('keydown', disablePrintScreen);
       document.onselectstart = null;
       document.ondragstart = null;
-      clearInterval(detectionInterval);
     };
   }, []);
 
@@ -261,9 +242,9 @@ export default function EmailGeneratorPage() {
       const sheetName = sheetNameToUse || sheetNames[0];
       setSelectedSheet(sheetName);
       
-      if (selectedCollege === 'niet' || selectedCollege === 'srm') {
-        // Process attendance data for all sheets (NIET and SRM)
-        processAllSheetsForNIET(workbook, sheetName);
+      if (selectedCollege === 'srm') {
+        // Process attendance data for all sheets (SRM)
+        processAllSheetsForSRM(workbook, sheetName);
       } else {
         // Process regular student data for other colleges
         const worksheet = workbook.Sheets[sheetName];
@@ -282,7 +263,7 @@ export default function EmailGeneratorPage() {
     reader.readAsArrayBuffer(file);
   };
 
-  const processAllSheetsForNIET = (workbook: XLSX.WorkBook, primarySheet: string) => {
+  const processAllSheetsForSRM = (workbook: XLSX.WorkBook, primarySheet: string) => {
     // Process the primary sheet first to get dates
     const primaryWorksheet = workbook.Sheets[primarySheet];
     const primaryRawData = XLSX.utils.sheet_to_json(primaryWorksheet, { header: 1, defval: '' }) as (string | number)[][];
@@ -677,23 +658,6 @@ export default function EmailGeneratorPage() {
     setAllSheetsAttendanceData(new Map());
   };
 
-  const loadNIETAttendanceSheet = async () => {
-    try {
-      const response = await fetch('/Common Attendance Sheet data_NIET College.xlsx');
-      const arrayBuffer = await response.arrayBuffer();
-      const blob = new Blob([arrayBuffer], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-      });
-      const file = new File([blob], 'Common Attendance Sheet data_NIET College.xlsx', { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-      });
-      
-      setAttendanceFile(file);
-      processExcelFile(file);
-    } catch (error) {
-      console.error('Failed to load NIET attendance sheet:', error);
-    }
-  };
 
   const loadSRMAttendanceSheet = async () => {
     try {
@@ -997,7 +961,7 @@ Warm regards,`;
       return `${dayNum}${ordinalSuffix} ${months[parseInt(month, 10)]} ${year}`;
     };
     
-    const subjectLine = `NIET College NCET + Training Attendance for ${formatDateForSubject(actualDate)}`;
+    const subjectLine = `College NCET + Training Attendance for ${formatDateForSubject(actualDate)}`;
     
     // Apply topic mapping directly in email generation with batch numbers
     const getDisplayTopicName = (batchName: string): string => {
@@ -1191,7 +1155,7 @@ Regards,`;
     const cleanBatchName = (batchName: string): string => {
       const cleaned = batchName.replace(/\s*Attendance\s*$/i, '').trim();
       
-      // Normalize common batch names
+      // Normalize common batch names for NIET
       if (cleaned.toLowerCase().includes('java sde-1')) {
         return 'JAVA SDE-1';
       } else if (cleaned.toLowerCase().includes('java sde-2')) {
@@ -1206,7 +1170,7 @@ Regards,`;
     };
     
     const subjectTopic = selectedBatchForEmail ? cleanBatchName(selectedBatchForEmail) : 'Training';
-    const subjectLine = `${subjectTopic} NCET + Training NIET College Attendance ${formatDateForStudentSubject(actualDate)}`;
+    const subjectLine = `${subjectTopic} NCET + Online Training NIET College Attendance ${formatDateForStudentSubject(actualDate)}`;
     
     const htmlContent = `<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">
 <p><strong>Dear Students,</strong></p>
@@ -1274,7 +1238,7 @@ Regards,`;
     const cleanBatchName = (batchName: string): string => {
       const cleaned = batchName.replace(/\s*Attendance\s*$/i, '').trim();
       
-      // Normalize common batch names
+      // Normalize common batch names for NIET
       if (cleaned.toLowerCase().includes('java sde-1')) {
         return 'JAVA SDE-1';
       } else if (cleaned.toLowerCase().includes('java sde-2')) {
@@ -1289,7 +1253,7 @@ Regards,`;
     };
     
     const subjectTopic = selectedBatchForEmail ? cleanBatchName(selectedBatchForEmail) : 'Training';
-    const subjectLine = `${subjectTopic} NCET + Training NIET College Attendance ${formatDateForStudentSubject(actualDate)}`;
+    const subjectLine = `${subjectTopic} NCET + Online Training NIET College Attendance ${formatDateForStudentSubject(actualDate)}`;
     
     const htmlContent = `<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">
 <p><strong>Dear Students,</strong></p>
@@ -1754,7 +1718,7 @@ Digital Learning Solutions</p>
                     setSelectedStudents(new Set());
                     setGeneratedEmails([]);
                     setEmailsSent(new Set());
-                    // Reset NIET-specific data
+                    // Reset specific data
                     setAttendanceDates([]);
                     setSelectedDate('');
                     setAttendanceStats(null);
@@ -1816,12 +1780,12 @@ Digital Learning Solutions</p>
                   <span>SRM Offline</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                  <span>NIET</span>
-                </div>
-                <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                   <span>NMIET</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                  <span>NIET</span>
                 </div>
               </div>
             </section>
@@ -1867,6 +1831,7 @@ Digital Learning Solutions</p>
                   Select College
                 </div>
               </div>
+
 
               {/* NIET Block */}
               <div 
@@ -1923,8 +1888,14 @@ Digital Learning Solutions</p>
             <NMIETOnline isVisible={true} />
           )}
 
+          {/* NIET Component */}
+          {selectedCollege === 'niet' && (
+            <NIET isVisible={true} />
+          )}
+
+
           {/* Row 1: Upload and Student Selection - Show only for non-SRM colleges */}
-          {selectedCollege && selectedCollege !== 'srm-online' && selectedCollege !== 'srm' && selectedCollege !== 'nmiet' && (
+          {selectedCollege && selectedCollege !== 'srm-online' && selectedCollege !== 'srm' && selectedCollege !== 'nmiet' && selectedCollege !== 'niet' && (
             <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Box 1: Upload Document Section */}
@@ -1947,22 +1918,22 @@ Digital Learning Solutions</p>
                   <p className="text-xs text-gray-600 mt-1">Choose from SRM, NMIET, or NIET above</p>
                 </div>
               </div>
-            ) : (selectedCollege === 'niet' || selectedCollege === 'srm') ? (
+            ) : (selectedCollege === 'srm') ? (
               <div className="space-y-4">
                 <div className="relative border-2 border-dashed border-blue-600 rounded-lg p-8 text-center bg-blue-600/10">
                   <div className="flex flex-col items-center justify-center">
                     <FileText className="w-10 h-10 text-blue-500 mb-3" />
                     <p className="text-white font-medium mb-2">
-                      {selectedCollege === 'niet' ? 'NIET' : 'SRM'} Attendance Sheet
+                      SRM Attendance Sheet
                     </p>
                     <p className="text-xs text-gray-400 mb-4">
                       {attendanceFile ? `Loaded: ${attendanceFile.name}` : 'Use the pre-configured attendance sheet or upload a custom one'}
                     </p>
                     <button 
-                      onClick={selectedCollege === 'niet' ? loadNIETAttendanceSheet : loadSRMAttendanceSheet}
+                      onClick={loadSRMAttendanceSheet}
                       className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
                     >
-                      Load {selectedCollege === 'niet' ? 'NIET' : 'SRM'} Attendance Sheet
+                      Load SRM Attendance Sheet
                     </button>
                   </div>
                 </div>
@@ -2181,11 +2152,11 @@ Digital Learning Solutions</p>
               }
             </p>
             {selectedCollege && isUploadComplete && (
-              ((selectedCollege === 'niet' || selectedCollege === 'srm') && attendanceDates.length > 0) || 
-              (selectedCollege !== 'niet' && selectedCollege !== 'srm' && studentData.length > 0)
+              ((selectedCollege === 'srm') && attendanceDates.length > 0) || 
+              (selectedCollege !== 'srm' && studentData.length > 0)
             ) ? (
-              (selectedCollege === 'niet' || selectedCollege === 'srm') ? (
-                // NIET and SRM Attendance Analysis
+              (selectedCollege === 'srm') ? (
+                // SRM Attendance Analysis
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-300">
@@ -2193,7 +2164,7 @@ Digital Learning Solutions</p>
                     </span>
                     <div className="flex gap-2">
                       <span className="text-xs px-2 py-1 bg-blue-600 text-white rounded">
-{selectedCollege === 'niet' ? 'NIET' : 'SRM'} College
+SRM College
                       </span>
                       <span className="text-xs px-2 py-1 bg-green-600 text-white rounded">
                         {selectedSheetsForProcessing.size} selected | {allSheetsAttendanceData.size} processed
@@ -2775,7 +2746,7 @@ Warm regards,`.replace(/\n/g, '<br>')
                         )}
                       </button>
                     </div>
-                    <p className="text-xs text-gray-400">Pre-populated with NIET email addresses. You can copy and paste this into your email client&apos;s &quot;To&quot; field.</p>
+                    <p className="text-xs text-gray-400">Pre-populated with email addresses. You can copy and paste this into your email client&apos;s &quot;To&quot; field.</p>
                   </div>
                 </div>
 
@@ -2825,7 +2796,7 @@ Warm regards,`.replace(/\n/g, '<br>')
                     <div className="bg-orange-600/20 border border-orange-500/30 rounded p-4 text-center">
                       <div className="text-orange-300 text-sm font-medium mb-1">No Date Selected</div>
                       <div className="text-orange-200/80 text-xs">
-                        Please select NIET college, upload attendance sheet, choose sheets to process, and select a date to generate email template.
+                        Please select college, upload attendance sheet, choose sheets to process, and select a date to generate email template.
                       </div>
                     </div>
                   )}
@@ -3142,7 +3113,7 @@ Warm regards,`.replace(/\n/g, '<br>')
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-red-400" />
-                        <span className="text-xs font-semibold text-red-300">To (NIET Staff)</span>
+                        <span className="text-xs font-semibold text-red-300">To (Staff)</span>
                       </div>
                       <button
                         onClick={copyAbsentStudentEmailTo}
@@ -3331,7 +3302,7 @@ Warm regards,`.replace(/\n/g, '<br>')
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-green-400" />
-                        <span className="text-xs font-semibold text-green-300">To (NIET Staff)</span>
+                        <span className="text-xs font-semibold text-green-300">To (Staff)</span>
                       </div>
                       <button
                         onClick={copyPresentStudentEmailTo}
