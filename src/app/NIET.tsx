@@ -203,8 +203,6 @@ export default function NIET({ isVisible }: NIETProps) {
     }
   }, [selectedDate, selectedSheet, selectedSheetsForProcessing, allSheetsData, calculateAttendanceStats]);
 
-  if (!isVisible) return null;
-
   // Functions
   const loadNIETAttendanceSheet = async () => {
     try {
@@ -546,7 +544,60 @@ export default function NIET({ isVisible }: NIETProps) {
       generateAbsentStudentEmail();
       generatePresentStudentEmail();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEmailBatchSheet, internReport, allSheetsAttendanceData, selectedDate]);
+
+  // Helper function for formatting intern report to table
+  const formatInternReportToTable = useCallback((content: string): string => {
+    if (!content.trim()) return '';
+    
+    const lines = content.split('\n').filter(line => line.trim());
+    
+    const getTopicDisplayName = (sheetName: string): string => {
+      const sheetLower = sheetName.toLowerCase();
+      if (sheetLower.includes('ms-1') || sheetLower.includes('mern')) {
+        return 'MERN Stack';
+      } else if (sheetLower.includes('java sde-1') || sheetLower.includes('java sde 1')) {
+        return 'JAVA SDE';
+      } else if (sheetLower.includes('java sde-2') || sheetLower.includes('java sde 2')) {
+        return 'JAVA SDE';
+      } else if (sheetLower.includes('data scientist') || sheetLower.includes('python')) {
+        return 'Data Science';
+      }
+      return sheetName; // Fallback to original name if no match
+    };
+
+    const topicDisplayName = getTopicDisplayName(selectedEmailBatchSheet);
+
+    // Create table header
+    let tableHTML = `
+    <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+      <thead>
+        <tr style="background-color: #FFE100;">
+          <th style="border: 1px solid #000000; padding: 8px; text-align: center; font-weight: bold;">S.No</th>
+          <th style="border: 1px solid #000000; padding: 8px; text-align: center; font-weight: bold;">Topic</th>
+          <th style="border: 1px solid #000000; padding: 8px; text-align: left; font-weight: bold;">Description</th>
+        </tr>
+      </thead>
+      <tbody>`;
+    
+    // Create a single row with all content
+    if (lines.length > 0) {
+      const allContent = lines.map((line, index) => `${index + 1}. ${line.trim()}`).join('<br>');
+      tableHTML += `
+        <tr>
+          <td style="border: 1px solid #000000; padding: 8px; text-align: center;">1</td>
+          <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-weight: bold;">${topicDisplayName}</td>
+          <td style="border: 1px solid #000000; padding: 8px; text-align: left;">${allContent}</td>
+        </tr>`;
+    }
+    
+    tableHTML += `
+      </tbody>
+    </table>`;
+    
+    return tableHTML;
+  }, [selectedEmailBatchSheet]);
 
   // Email generation functions
   const generateAbsentStudentEmail = useCallback(() => {
@@ -644,58 +695,7 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
     setAbsentStudentEmailTo(nietStaffEmails);
     setAbsentStudentEmailCC(myAnatomyStaffEmails);
     setAbsentStudentEmailBCC(absentStudentEmails);
-  }, [selectedEmailBatchSheet, internReport, allSheetsAttendanceData]);;
-
-  const formatInternReportToTable = (content: string): string => {
-    if (!content.trim()) return '';
-    
-    const lines = content.split('\n').filter(line => line.trim());
-    
-    const getTopicDisplayName = (sheetName: string): string => {
-      const sheetLower = sheetName.toLowerCase();
-      if (sheetLower.includes('ms-1') || sheetLower.includes('mern')) {
-        return 'MERN Stack';
-      } else if (sheetLower.includes('java sde-1') || sheetLower.includes('java sde 1')) {
-        return 'JAVA SDE';
-      } else if (sheetLower.includes('java sde-2') || sheetLower.includes('java sde 2')) {
-        return 'JAVA SDE';
-      } else if (sheetLower.includes('data scientist') || sheetLower.includes('python')) {
-        return 'Data Science';
-      }
-      return sheetName; // Fallback to original name if no match
-    };
-
-    const topicDisplayName = getTopicDisplayName(selectedEmailBatchSheet);
-
-    // Create table header
-    let tableHTML = `
-    <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
-      <thead>
-        <tr style="background-color: #FFE100;">
-          <th style="border: 1px solid #000000; padding: 8px; text-align: center; font-weight: bold;">S.No</th>
-          <th style="border: 1px solid #000000; padding: 8px; text-align: center; font-weight: bold;">Topic</th>
-          <th style="border: 1px solid #000000; padding: 8px; text-align: left; font-weight: bold;">Description</th>
-        </tr>
-      </thead>
-      <tbody>`;
-    
-    // Add table row - only for the primary selected batch
-    if (selectedSheet) {
-      const numberedDescription = lines.map((line, lineIndex) => `${lineIndex + 1}. ${line.trim()}`).join('<br>');
-      tableHTML += `
-        <tr style="background-color: #ffffff;">
-          <td style="border: 1px solid #000000; padding: 8px; text-align: center;">1</td>
-          <td style="border: 1px solid #000000; padding: 8px; text-align: center; font-weight: bold;">${topicDisplayName}</td>
-          <td style="border: 1px solid #000000; padding: 8px; text-align: left;">${numberedDescription}</td>
-        </tr>`;
-    }
-    
-    tableHTML += `
-      </tbody>
-    </table>`;
-    
-    return tableHTML;
-  };
+  }, [selectedEmailBatchSheet, internReport, allSheetsAttendanceData, formatInternReportToTable]);
 
   const generatePresentStudentEmail = useCallback(() => {
     if (!selectedEmailBatchSheet || !allSheetsAttendanceData.has(selectedEmailBatchSheet)) return;
@@ -783,7 +783,7 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
     setPresentStudentEmailTo(nietStaffEmails);
     setPresentStudentEmailCC(myAnatomyStaffEmails);
     setPresentStudentEmailBCC(presentStudentEmails);
-  }, [selectedEmailBatchSheet, internReport, allSheetsAttendanceData]);
+  }, [selectedEmailBatchSheet, internReport, allSheetsAttendanceData, formatInternReportToTable]);
 
   // Copy functions
   const copyAbsentStudentEmail = async () => {
@@ -1066,6 +1066,10 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
     return batchData;
   };
 
+
+  if (!isVisible) {
+    return null;
+  }
 
   return (
     <div className="space-y-8">
