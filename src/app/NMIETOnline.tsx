@@ -188,10 +188,10 @@ export default function NMIETOnline({ isVisible }: NMIETOnlineProps) {
     console.log('NMIET DEBUG: Dates found:', dates);
     setAttendanceDates(dates);
     
-    // Process students data from row 5 to row 98
+    // Process students data from row 5 to row 99
     const students: NMIETStudent[] = [];
-    console.log('NMIET DEBUG: Processing students from row 5 to', Math.min(primaryRawData.length, 98));
-    for (let i = 4; i < Math.min(primaryRawData.length, 98); i++) { // Row 5 to 98
+    console.log('NMIET DEBUG: Processing students from row 5 to', Math.min(primaryRawData.length, 99));
+    for (let i = 4; i < Math.min(primaryRawData.length, 99); i++) { // Row 5 to 99
       const row = primaryRawData[i];
       if (row && row[1] && row[2]) { // Must have name and email
         const student: NMIETStudent = {
@@ -703,7 +703,7 @@ ${internReport ? formatInternReportToTable(internReport) : '<p><em>Session summa
                     <div className="flex-1">
                       <div className="text-sm text-white font-medium">📊 MERN Stack</div>
                       <div className="text-xs text-orange-400">
-                        NMIET Batch - Rows 5-98 (MERN Stack Training)
+                        NMIET Batch - Rows 5-99 (MERN Stack Training)
                       </div>
                     </div>
                     <div className="text-xs bg-green-600 text-white px-2 py-1 rounded">
