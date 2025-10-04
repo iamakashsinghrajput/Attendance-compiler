@@ -1693,8 +1693,8 @@ Digital Learning Solutions</p>
   const isUploadComplete = attendanceFile !== null;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-200 font-sans p-4 sm:p-6 lg:p-8 select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none', msUserSelect: 'none', WebkitTouchCallout: 'none' }}>
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-900 text-gray-200 font-sans p-4 sm:p-6 lg:p-8 select-none flex flex-col" style={{ userSelect: 'none', WebkitUserSelect: 'none', msUserSelect: 'none', WebkitTouchCallout: 'none' }}>
+      <div className="max-w-7xl mx-auto flex-1">
         {/* Header */}
         <header className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
@@ -3435,6 +3435,21 @@ Warm regards,`.replace(/\n/g, '<br>')
           )}
         </main>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-gray-800 w-full border-t border-gray-700 py-4 px-6 text-center mt-auto">
+        <div className="text-sm text-gray-400">
+          Build By{' '}
+          <a
+            href="https://portfolio-lyart-gamma-39.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            Akash Studios
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }
