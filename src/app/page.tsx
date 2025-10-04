@@ -1765,7 +1765,7 @@ Digital Learning Solutions</p>
                 <Users className="w-12 h-12 text-blue-400 mb-2" />
               </div>
               <h1 className="text-3xl font-bold text-white mb-4">
-                Welcome to the Attendance Management System Anushka
+                Welcome to the Attendance Management System
               </h1>
               <p className="text-lg text-gray-300 mb-6">
                 Select a college from the dropdown above to get started with attendance tracking and management.
