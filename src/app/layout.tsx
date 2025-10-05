@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Anushka Attendance Compiler",
+  title: "Attendance Compiler",
   description: "Welcome to Attendance Compiler",
 };
 
